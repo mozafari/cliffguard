@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry excluding="edu/mit/robustopt/clustering/QueryClusteringVerbatim.java|edu/mit/robustopt/clustering/QueryClusteringVerticaColumns.java|edu/mit/robustopt/clustering/SqlLogManager.java|edu/mit/robustopt/clustering/TestQueryExtractor.java|edu/mit/robustopt/preprocessing/FilterIgnoredQueries.java|edu/mit/robustopt/clustering/Query_v1.java" kind="src" path="src"/>
+	<classpathentry kind="lib" path="../libs/javacsv2.1/javacsv.jar"/>
+	<classpathentry kind="lib" path="../libs/mac_client/opt/vertica/java/lib/vertica-jdk5-6.0.1-0.jar"/>
+	<classpathentry kind="lib" path="../libs/opencsv-2.3/lib/junit-4.7.jar"/>
+	<classpathentry kind="lib" path="../libs/super-csv-2.0.0/super-csv/super-csv-2.0.0-beta-1-sources.jar"/>
+	<classpathentry kind="lib" path="../libs/super-csv-2.0.0/super-csv/super-csv-2.0.0-beta-1.jar"/>
+	<classpathentry kind="lib" path="libs/commons-math-2.1.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/tsqlparser/bin"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/tsqlparser"/>
+	<classpathentry kind="lib" path="../libs/javailp-1.2a.jar"/>
+	<classpathentry kind="lib" path="../libs/glpk-java-1.0.28.jar"/>
+	<classpathentry kind="lib" path="libs/gsp.jar"/>
+	<classpathentry kind="lib" path="libs/sqljdbc4.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

@@ -1,0 +1,10 @@
+11-07-11 - Version 0.1
+	- rewriteToTemporal() and toNonTemporalSQL() : supports rewriting into both MySQL/Postgres.
+	- Now() UDF in Postgres returns the same timestamps within a transaction, thus remove the need for a temp variable.
+	- BUG FIX: toNonTemporalSQL() doesn't rewrite queries with no conditions. 
+	- TimestampDataType now has a toDecimalTime() method to rewrite a timestamp into a decimal forms (for MySQL).
+	- Package rename to com.relationalcloud.tsqlparser
+Older changes
+	This list includes changes done from the initial version of Carlo
+	- Modified SQL with added Temporal extension in : JSqlParserCC.jj
+	- Support for parsing time precision. Tweak: Seconds could be parsed as a Double (if any) to record the precision.

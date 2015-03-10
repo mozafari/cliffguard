@@ -1,0 +1,61 @@
+/* ================================================================
+ * JSQLParser : java based sql parser 
+ * ================================================================
+ *
+ * Project Info:  http://jsqlparser.sourceforge.net
+ * Project Lead:  Leonardo Francalanci (leoonardoo@yahoo.it);
+ *
+ * (C) Copyright 2004, by Leonardo Francalanci
+ *
+ * This library is free software; you can redistribute it and/or modify it under the terms
+ * of the GNU Lesser General Public License as published by the Free Software Foundation;
+ * either version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with this
+ * library; if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ * Boston, MA 02111-1307, USA.
+ */
+ 
+package com.relationalcloud.tsqlparser.expression.operators.relational;
+
+import com.relationalcloud.tsqlparser.expression.BinaryExpression;
+import com.relationalcloud.tsqlparser.expression.Expression;
+import com.relationalcloud.tsqlparser.expression.ExpressionVisitor;
+import com.relationalcloud.tsqlparser.visitors.recursive.RecursiveRewriterVisitor;
+import com.relationalcloud.tsqlparser.visitors.recursive.RecursiveVisitor;
+
+
+public class NotEqualsTo extends BinaryExpression {
+	public void accept(ExpressionVisitor expressionVisitor) {
+		expressionVisitor.visit(this);
+	}
+
+
+	public String getStringExpression() {
+		return "<>";
+	}
+	
+	@Override
+	public void accept(RecursiveVisitor v) {
+		v.visitBegin(this);
+		getLeftExpression().accept(v);
+		getRightExpression().accept(v);
+		v.visitEnd(this);
+	}
+
+	@Override
+	public Object accept(RecursiveRewriterVisitor v) {
+		v.visitBegin(this);
+		Object l = getLeftExpression().accept(v);
+		if (l != null)
+			setLeftExpression((Expression) l);
+		Object r = getRightExpression().accept(v);
+		if (r != null)
+			setRightExpression((Expression) r);
+		return v.visitEnd(this);
+	}
+}

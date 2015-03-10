@@ -23,7 +23,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-import edu.umich.robustopt.algorithms.OptimalMonteCarloRobustDesigner;
 import edu.umich.robustopt.clustering.Cluster;
 import edu.umich.robustopt.clustering.ClusteredWindow;
 import edu.umich.robustopt.common.BLog;

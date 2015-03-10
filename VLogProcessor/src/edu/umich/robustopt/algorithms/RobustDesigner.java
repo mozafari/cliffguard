@@ -214,22 +214,6 @@ public abstract class RobustDesigner extends RealisticDesignAlgorithm {
 		
 		return msg.toString();
 	}
-
-	protected String showDesignDistances(PhysicalDesign idealDesignFromCurrentWindow, PhysicalDesign nominalDesignFromPastWindow, List<PhysicalDesign> perturbedDesigns, PhysicalDesign robustDesign) throws Exception {
-		StringBuilder msg = new StringBuilder();
-
-		//compute difference of idealDesign to past and purturbed designs
-		log.status(LogLevel.VERBOSE, "distance between idealDesign and pastWindowDesign: " + summarizeDifferenceBetweenTwoDesigns(idealDesignFromCurrentWindow, nominalDesignFromPastWindow));
-		for (int p=1; p<perturbedDesigns.size(); ++p)
-			log.status(LogLevel.VERBOSE, "distance between idealDesign and purturbed design p_id="+p+" was: "+summarizeDifferenceBetweenTwoDesigns(idealDesignFromCurrentWindow, perturbedDesigns.get(p)));
-		double pastWindowDesignDisk = dbDeployer.retrieveDesignDiskSizeInGigabytes(nominalDesignFromPastWindow.getPhysicalStructuresAsList());
-		PhysicalDesign majorityDesign = MajoritySizePreservingDesigner.mergeDesignsByMajorityPreservingSizeOfProjections(perturbedDesigns, pastWindowDesignDisk, log, dbDeployer);
-		log.status(LogLevel.VERBOSE, "distance between idealDesign and majorityVoteDesign: " + summarizeDifferenceBetweenTwoDesigns(idealDesignFromCurrentWindow, majorityDesign));
-		log.status(LogLevel.VERBOSE, "distance between idealDesign and " + getName() + ": " + summarizeDifferenceBetweenTwoDesigns(idealDesignFromCurrentWindow, robustDesign));
-		log.status(LogLevel.VERBOSE, "distance between pastWindowDesign and " + getName() + ": " + summarizeDifferenceBetweenTwoDesigns(nominalDesignFromPastWindow, robustDesign));
-		
-		return msg.toString();
-	}
 	
 	protected String robustSignature(DistributionDistance distributionDistance) {
 		String sign = "distributionDistance=" + distributionDistance + ", " + signature();

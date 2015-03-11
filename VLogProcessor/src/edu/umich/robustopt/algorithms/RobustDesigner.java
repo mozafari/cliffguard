@@ -220,6 +220,14 @@ public abstract class RobustDesigner extends RealisticDesignAlgorithm {
 		return sign;
 	}
 
-	
+	public static String replaceDistibutionDistanceFromSignature(String originalSignature) {
+		int startIdx = originalSignature.indexOf("distributionDistance=");
+		if (startIdx == -1) // could not find any distribution distance in the signature!
+			return originalSignature;
+		int endIdx = originalSignature.substring(startIdx).indexOf(",");
+		String newString = originalSignature.substring(0, startIdx) + "distributionDistance=*" + originalSignature.substring(startIdx + endIdx);
+		return newString;
+	}
+
 	
 }

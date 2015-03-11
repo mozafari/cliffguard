@@ -36,10 +36,10 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.umich.robustopt.algorithms.DesignAlgorithm;
+import edu.umich.robustopt.algorithms.RobustDesigner;
 import edu.umich.robustopt.clustering.WeightedQuery;
 import edu.umich.robustopt.common.GlobalConfigurations;
 import edu.umich.robustopt.dblogin.QueryPlanParser;
-import edu.umich.robustopt.experiments.RunExperiment;
 import edu.umich.robustopt.metering.DesignKey;
 import edu.umich.robustopt.metering.PerformanceValue;
 import edu.umich.robustopt.microsoft.MicrosoftQueryPlanParser;
@@ -376,11 +376,11 @@ public class ExperimentCache implements Serializable {
 			String algorithmName = key.getAlgorithmName();
 			if (algorithmName == null)
 				algorithmName = "null";
-			algorithmName = RunExperiment.replaceDistibutionDistanceFromSignature(algorithmName);
+			algorithmName = RobustDesigner.replaceDistibutionDistanceFromSignature(algorithmName);
 			String params = key.getAlgorithmName();
 			if (params == null)
 				params = "null";
-			params = RunExperiment.replaceDistibutionDistanceFromSignature(params);
+			params = RobustDesigner.replaceDistibutionDistanceFromSignature(params);
 			long time = trace.getTotalTimeInSeconds();
 			String signature = algorithmName + ":" + params;
 			mainFile.write(signature + "\t" + time + "\n");

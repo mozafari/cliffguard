@@ -32,8 +32,6 @@ public class ResiliantConnection implements Connection {
 	}
 
 	public void check() throws SQLException {
-		if (1==0) //TODO: Uncomment this after SIGMOD deadline!
-			return;
 		try {
 			Statement s = actualConnection.createStatement();
 			s.execute("SELECT 1");
@@ -308,6 +306,7 @@ public class ResiliantConnection implements Connection {
 		return actualConnection.unwrap(iface);
 	}
 
+	/*
 	@Override
 	public void setSchema(String schema) throws SQLException {
 		// TODO Auto-generated method stub
@@ -323,20 +322,16 @@ public class ResiliantConnection implements Connection {
 	@Override
 	public void abort(Executor executor) throws SQLException {
 		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void setNetworkTimeout(Executor executor, int milliseconds)
 			throws SQLException {
 		// TODO Auto-generated method stub
-		
 	}
-
-	@Override
-	public int getNetworkTimeout() throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
+	*/
+	public int getNetworkTimeout() {
+		return timeoutInSecs;
 	}
 	
 	

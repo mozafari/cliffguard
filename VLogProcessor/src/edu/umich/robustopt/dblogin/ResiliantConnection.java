@@ -306,7 +306,6 @@ public class ResiliantConnection implements Connection {
 		return actualConnection.unwrap(iface);
 	}
 
-	/*
 	@Override
 	public void setSchema(String schema) throws SQLException {
 		// TODO Auto-generated method stub
@@ -329,7 +328,7 @@ public class ResiliantConnection implements Connection {
 			throws SQLException {
 		// TODO Auto-generated method stub
 	}
-	*/
+
 	public int getNetworkTimeout() {
 		return timeoutInSecs;
 	}

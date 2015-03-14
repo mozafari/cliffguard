@@ -36,11 +36,14 @@ import edu.umich.robustopt.workloads.EuclideanDistanceWithSimpleUnion.UnionOptio
 public class UnpartitionedQueryLogAnalyzer<Q extends Query> extends QueryLogAnalyzer {
 	private List<Q> all_queries = null;
 	
-	public UnpartitionedQueryLogAnalyzer(QueryParser<Q> qParser, List<Q> all_queries, DistributionDistanceGenerator<? extends DistributionDistance> distanceGenerator) throws Exception {
-		super(qParser, distanceGenerator, LogLevel.DEBUG);
+	public UnpartitionedQueryLogAnalyzer(QueryParser<Q> qParser, List<Q> all_queries, DistributionDistanceGenerator<? extends DistributionDistance> distanceGenerator, String logFile) throws Exception {
+		super(qParser, distanceGenerator, LogLevel.DEBUG, logFile);
 		this.all_queries = all_queries;
 	}
 
+	public UnpartitionedQueryLogAnalyzer(QueryParser<Q> qParser, List<Q> all_queries, DistributionDistanceGenerator<? extends DistributionDistance> distanceGenerator) throws Exception {
+		this(qParser, all_queries, distanceGenerator, null);
+	}
 
 	public List<Q> getAll_queries() throws CloneNotSupportedException {
 		return Collections.unmodifiableList(all_queries);

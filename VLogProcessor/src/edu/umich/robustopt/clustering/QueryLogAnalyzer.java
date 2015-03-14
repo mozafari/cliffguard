@@ -1,6 +1,7 @@
 package edu.umich.robustopt.clustering;
 
 import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
@@ -20,11 +21,20 @@ public abstract class QueryLogAnalyzer <Q extends Query>{
 	protected DistributionDistanceGenerator<? extends DistributionDistance> distDistanceGenerator;
 
 	public QueryLogAnalyzer(QueryParser<Q> qParser, DistributionDistanceGenerator<? extends DistributionDistance> distDistanceGenerator, 
-			LogLevel level) {
-		this.log = new BLog(level);
+			LogLevel level, String logFile) throws FileNotFoundException {
+		if (logFile!=null)
+			this.log = new BLog(logFile, logFile, level);
+		else
+			this.log = new BLog(level);
 		this.distDistanceGenerator = distDistanceGenerator;
 	}
 
+	public QueryLogAnalyzer(QueryParser<Q> qParser, DistributionDistanceGenerator<? extends DistributionDistance> distDistanceGenerator, 
+			LogLevel level) throws FileNotFoundException {
+		this(qParser, distDistanceGenerator, level, null);
+	}
+
+	
 	public List<DistributionDistance> measureDistancesBetweenPairsOfLaggedWindows(List<QueryWindow> queryWindowList, int lagBetweenPairsOfWindows) throws Exception {
 		if (lagBetweenPairsOfWindows<1)
 			throw new Exception("lagBetweenPairsOfWindows < 1 :" + lagBetweenPairsOfWindows);
@@ -122,12 +132,12 @@ public abstract class QueryLogAnalyzer <Q extends Query>{
 	public void measureWindowSize_AvgConsecutiveDistance(List<Query> all_queries, String whereToSaveFiles) throws Exception {
 		PrintStream ps = new PrintStream(whereToSaveFiles);
 		String sep = "\t";
-		System.out.println("#WindowSizeInDays"+sep+"avgDistanceBetweenConsecutiveWindows");
+		//System.out.println("#WindowSizeInDays"+sep+"avgDistanceBetweenConsecutiveWindows");
 		ps.println("#WindowSizeInDays"+sep+"avgDistanceBetweenConsecutiveWindows");
 		for (int windowSizeInDays=1; windowSizeInDays<=31; ++windowSizeInDays) {
 			List<QueryWindow> windowsLists = splitIntoTimeEqualWindows(all_queries, windowSizeInDays);
 			DistributionDistance dist = measureAvgDistanceBetweenConsecutiveWindows(windowsLists);
-			System.out.println(windowSizeInDays + sep + dist.toString());
+			//System.out.println(windowSizeInDays + sep + dist.toString());
 			ps.println(windowSizeInDays + sep + dist.toString());
 		}
 		ps.close();
@@ -137,7 +147,7 @@ public abstract class QueryLogAnalyzer <Q extends Query>{
 		PrintStream ps = new PrintStream(whereToSaveFiles);
 		
 		String sep = "\t";
-		System.out.println("#WindowSizeInDays"+sep+"lagBetweenPairsOfWindows"+sep+"avgDistanceBetweenPairsOfWindows");
+		//System.out.println("#WindowSizeInDays"+sep+"lagBetweenPairsOfWindows"+sep+"avgDistanceBetweenPairsOfWindows");
 		ps.println("#WindowSizeInDays"+sep+"lagBetweenPairsOfWindows"+sep+"avgDistanceBetweenPairsOfWindows");
 		
 		for (int windowSizeInDays=7; windowSizeInDays<=30; windowSizeInDays+=7) {
@@ -145,7 +155,7 @@ public abstract class QueryLogAnalyzer <Q extends Query>{
 
 			for (int lagSize=1; lagSize<windows.size(); ++lagSize) {
 				DistributionDistance avgDistance = measureAvgDistanceBetweenPairsOfLaggedWindows(windows, lagSize);
-				System.out.println(windowSizeInDays + sep + lagSize + sep + avgDistance.toString());
+				//System.out.println(windowSizeInDays + sep + lagSize + sep + avgDistance.toString());
 				ps.println(windowSizeInDays + sep + lagSize + sep + avgDistance.toString());
 			}
 		}
@@ -156,14 +166,14 @@ public abstract class QueryLogAnalyzer <Q extends Query>{
 		PrintStream ps = new PrintStream(whereToSaveFiles);
 		
 		String sep = "\t";
-		System.out.println("#WindowSizeInDays"+sep+"windowId"+sep+"DistanceBetweenThisAndTheNextWindow");
+		//System.out.println("#WindowSizeInDays"+sep+"windowId"+sep+"DistanceBetweenThisAndTheNextWindow");
 		ps.println("#WindowSizeInDays"+sep+"windowId"+sep+"DistanceBetweenThisAndTheNextWindow");
 			
 		for (int windowSizeInDays=7; windowSizeInDays<=30; windowSizeInDays+=7) {
 			List<QueryWindow> windows = splitIntoTimeEqualWindows(all_queries, windowSizeInDays);
 			List<DistributionDistance> distances = measureDistancseBetweenConsecutiveWindows(windows);
 			for (int winId=0; winId<distances.size(); ++winId) {
-				System.out.println(windowSizeInDays + sep + winId + sep + distances.get(winId).toString());
+				//System.out.println(windowSizeInDays + sep + winId + sep + distances.get(winId).toString());
 				ps.println(windowSizeInDays + sep + winId + sep + distances.get(winId).toString());
 			}
 		}

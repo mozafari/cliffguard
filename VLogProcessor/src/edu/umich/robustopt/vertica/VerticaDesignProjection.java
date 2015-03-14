@@ -7,8 +7,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.sun.tools.internal.ws.wsdl.document.jaxws.Exception;
-
 import edu.umich.robustopt.util.NamedIdentifier;
 
 /**

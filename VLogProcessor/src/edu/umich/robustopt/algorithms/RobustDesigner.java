@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Set;
 
 
-import sun.tools.tree.ThisExpression;
-
-
 import edu.umich.robustopt.clustering.ClusteredWindow;
 import edu.umich.robustopt.clustering.Clustering_QueryEquality;
 import edu.umich.robustopt.clustering.Query;

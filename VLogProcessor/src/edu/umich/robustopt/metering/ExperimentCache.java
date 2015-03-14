@@ -19,6 +19,9 @@ import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 /*
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
@@ -668,12 +671,14 @@ public class ExperimentCache implements Serializable {
 	    if (file1.exists())
 	    	if (!file1.renameTo(oldFile)) {
 	    		// DY: renameTo() is known to be problematic in Windows, so if it fails, let's try Files.move in Java 7
-/*	    		
-	    		String targetFilename = oldFile.getName();
-	    		Path sourcePath = file1.toPath();
-	    		Files.move(sourcePath, sourcePath.resolveSibling(targetFilename), StandardCopyOption.REPLACE_EXISTING);
-*/
-	    		throw new IOException("We could not rename the existing file with name : " + filename);
+	    		if (System.getProperty("os.name").toLowerCase().indexOf("win") >= 0) {
+	    			String targetFilename = oldFile.getName();
+	    			Path sourcePath = file1.toPath();
+	    			Files.move(sourcePath, sourcePath.resolveSibling(targetFilename), StandardCopyOption.REPLACE_EXISTING);
+	    		}
+	    		else {
+	    			throw new IOException("We could not rename the existing file with name : " + filename);
+	    		}
 	    	}
 	
 	    // now we have already backed up the existing file

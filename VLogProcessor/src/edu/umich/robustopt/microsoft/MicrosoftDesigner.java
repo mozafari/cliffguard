@@ -418,8 +418,8 @@ public class MicrosoftDesigner extends DBDesigner {
         arguments.add(inputPath + File.separator + xmlName);
 
         // max storage size required by physical structures
-        arguments.add("-B");
-        arguments.add("32768"); // in MB (i.e. 16G)
+//        arguments.add("-B");
+//        arguments.add("131072"); // in MB (i.e. 128G)
 
 		// session name
 		arguments.add("-s");

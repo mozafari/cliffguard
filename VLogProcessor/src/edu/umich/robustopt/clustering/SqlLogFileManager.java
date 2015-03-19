@@ -43,6 +43,7 @@ import edu.umich.robustopt.microsoft.MicrosoftLatencyMeter;
 import edu.umich.robustopt.physicalstructures.PhysicalStructure;
 import edu.umich.robustopt.util.SchemaUtils;
 import edu.umich.robustopt.util.StringUtils;
+import edu.umich.robustopt.util.Triple;
 import edu.umich.robustopt.vertica.VerticaDatabaseLoginConfiguration;
 import edu.umich.robustopt.vertica.VerticaLatencyMeter;
 import edu.umich.robustopt.workloads.DistributionDistanceGenerator;
@@ -86,20 +87,27 @@ public class SqlLogFileManager<Q extends Query>{
 	public SqlLogFileManager(char fieldSeparator, String querySeparator, QueryParser<Q> qParser, Map<String, Schema> schemaMap) {
 		this(fieldSeparator, querySeparator, qParser, schemaMap, null, null, null);
 	}
-	
+
 	public static List<String> loadQueryStringsFromPlainFile(String filename, int maxQueriesPerWindow) throws IOException {
+		return loadQueryStringsFromPlainFile(filename, maxQueriesPerWindow, true);
+	}
+	
+	public static List<String> loadQueryStringsFromPlainFile(String filename, int maxQueriesPerWindow, boolean returnOnlyParseableQueries) throws IOException {
 		File f = new File(filename);
 		List<String> loadedQueriesSql = StringUtils.GetLinesFromFile(f, maxQueriesPerWindow);
 		log.status(LogLevel.VERBOSE, "loaded queries from file "+ filename + " with "+  loadedQueriesSql.size() + " queries\n");
 		
 		List<String> parseableQueries = new ArrayList<String>();
 		for (String sqlQuery : loadedQueriesSql) {
-			try {
-				Parser p = new Parser("public", null, sqlQuery);
+			if (returnOnlyParseableQueries)
+				try {
+					Parser p = new Parser("public", null, sqlQuery);
+					parseableQueries.add(sqlQuery);
+				} catch (ParseException e) {
+					continue;
+				}
+			else
 				parseableQueries.add(sqlQuery);
-			} catch (ParseException e) {
-				continue;
-			}
 		}
 			
 		log.status(LogLevel.VERBOSE, "out of the " + loadedQueriesSql.size() + " queries from file "+ filename + " only "+  parseableQueries.size() + " were parseable\n");
@@ -127,9 +135,21 @@ public class SqlLogFileManager<Q extends Query>{
 		System.out.println("number_of_empty_queries: "+ number_of_empty_queries);
 	}
 
+	public List<String> loadTimestampQueryStringsFromFile(String input_query_log) throws Exception {
+		List<Q> allQueries = loadTimestampQueriesFromFile(input_query_log);
+		List<String> allQueryStrings = new ArrayList<String>(); 
+		for (Q query : allQueries) {
+			allQueryStrings.add(query.getSql());
+		}
+		
+		return allQueryStrings;
+	}
+		
 	/*
 	 * Format of each line: 
 	 * 2012-03-13 23:47:58.467531-07|select version_internal()
+	 * 
+	 * Output: <lineNumber, Timestamp, QueryString>
 	 */
 	public List<Q> loadTimestampQueriesFromFile(String input_query_log) throws Exception {
 		if (minLatencyInMilliSecs==null)

@@ -132,6 +132,10 @@ public class EuclideanDistanceWithSimpleUnionAndLatency extends EuclideanDistanc
 			return Math.abs(x - y)/(x + y); 
 		}
 		
+		public Double getLatencyPenaltyFactor() {
+			return latencyPenaltyFactor;
+		}
+		
 		@Override
 		public EuclideanDistanceWithSimpleUnionAndLatency distance(List<Query> leftWindow, List<Query> rightWindow) throws Exception {
 			if (leftWindow == null || rightWindow == null) {

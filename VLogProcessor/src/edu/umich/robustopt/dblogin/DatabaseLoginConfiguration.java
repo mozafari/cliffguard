@@ -246,6 +246,21 @@ public abstract class DatabaseLoginConfiguration implements Cloneable {
 		return emptyDBs;
 	}
 	
+	public static DatabaseLoginConfiguration findDBNameInList(String dbName, List<DatabaseLoginConfiguration> listOfDBConfigs) {
+		DatabaseLoginConfiguration result = null;
+		for (DatabaseLoginConfiguration dbConfig : listOfDBConfigs)
+			if (dbConfig.getDBname().equals(dbName))
+				result = dbConfig;
+		return result;
+	}
+	
+	public static DatabaseLoginConfiguration findDBAliasInList(String dbAlias, List<DatabaseLoginConfiguration> listOfDBConfigs) {
+		DatabaseLoginConfiguration result = null;
+		for (DatabaseLoginConfiguration dbConfig : listOfDBConfigs)
+			if (dbConfig.getDBalias().equals(dbAlias))
+				result = dbConfig;
+		return result;
+	}
 	
     public Object clone() throws CloneNotSupportedException {
         return super.clone();

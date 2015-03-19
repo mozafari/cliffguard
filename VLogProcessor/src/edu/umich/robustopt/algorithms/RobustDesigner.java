@@ -216,6 +216,10 @@ public abstract class RobustDesigner extends RealisticDesignAlgorithm {
 		String sign = "distributionDistance=" + distributionDistance + ", " + signature();
 		return sign;
 	}
+	
+	public WorkloadGenerator getWorkloadGenerator() {
+		return workloadGenerator;
+	}
 
 	public static String replaceDistibutionDistanceFromSignature(String originalSignature) {
 		int startIdx = originalSignature.indexOf("distributionDistance=");

@@ -21,12 +21,12 @@ public abstract class Query_SWGO_WorkloadGenerator<D extends DistributionDistanc
 		this.constManager = constManager;
 	}
 	
-	public Query_SWGO_WorkloadGenerator(String dbAlias, String databaseLoginFile, String DBVendor) throws Exception {
-		this(SchemaUtils.GetSchemaMapFromDefaultSources(dbAlias, DBVendor).getSchemas(), new ConstantValueManager(dbAlias, 0.05, databaseLoginFile, DBVendor));
+	public Query_SWGO_WorkloadGenerator(String dbName, String databaseLoginFile, String DBVendor) throws Exception {
+		this(SchemaUtils.GetSchemaMapFromDefaultSources(dbName, DBVendor).getSchemas(), new ConstantValueManager(dbName, 0.05, databaseLoginFile, DBVendor));
 	}
 	
-	public Query_SWGO_WorkloadGenerator(Map<String, Schema> schema, String dbAlias, double samplingRate, File constantMngrFile) throws Exception {
-		this(schema, ConstantValueManager.RestoreStateFromFile(dbAlias, samplingRate, constantMngrFile, null, null));
+	public Query_SWGO_WorkloadGenerator(Map<String, Schema> schema, String dbName, double samplingRate, File constantMngrFile) throws Exception {
+		this(schema, ConstantValueManager.RestoreStateFromFile(dbName, samplingRate, constantMngrFile, null, null));
 	}
 	
 	@Override

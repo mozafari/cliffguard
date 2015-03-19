@@ -37,27 +37,27 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui
 
 	private int numOfNewQueries;
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui(Map<String, Schema> schemaMap, 
-			List<String> allPossibleSqlQueries, Set<UnionOption> option, int numOfNewQueries) throws Exception {
-		super(schemaMap, allPossibleSqlQueries, option);
-		if (option.isEmpty()) {
+			List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses, int numOfNewQueries) throws Exception {
+		super(schemaMap, allPossibleSqlQueries, whichClauses);
+		if (whichClauses.isEmpty()) {
 			throw new Exception("Should at least has a clause in option");
 		}
 		this.numOfNewQueries = numOfNewQueries;
 	}
 	
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui(
-			String dbAlias, String DBVendor, List<String> allPossibleSqlQueries, Set<UnionOption> option, int numOfNewQueries) throws Exception {
-		super(dbAlias, DBVendor, allPossibleSqlQueries, option);
-		if (option.isEmpty()) {
+			String dbName, String DBVendor, List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses, int numOfNewQueries) throws Exception {
+		super(dbName, DBVendor, allPossibleSqlQueries, whichClauses);
+		if (whichClauses.isEmpty()) {
 			throw new Exception("Should at least has a clause in option");
 		}
 		this.numOfNewQueries = numOfNewQueries;
 	}
 
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui(
-		String dbAlias, List<DatabaseLoginConfiguration> dbLogins, List<String> allPossibleSqlQueries, Set<UnionOption> option, int numOfNewQueries) throws Exception {
-		super(dbAlias, dbLogins, allPossibleSqlQueries, option);
-		if (option.isEmpty()) {
+		String dbName, List<DatabaseLoginConfiguration> dbLogins, List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses, int numOfNewQueries) throws Exception {
+		super(dbName, dbLogins, allPossibleSqlQueries, whichClauses);
+		if (whichClauses.isEmpty()) {
 			throw new Exception("Should at least has a clause in option");
 		}
 		this.numOfNewQueries = numOfNewQueries;
@@ -184,7 +184,7 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui
 		Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMapFromDefaultSources("dataset19", VerticaDatabaseLoginConfiguration.class.getSimpleName()).getSchemas();
 		String topDir = GlobalConfigurations.RO_BASE_PATH + "/dataset_synthetic_tpch/"; 
 		String dbConfigFile = GlobalConfigurations.RO_BASE_PATH + "/databases.conf"; 
-		String dbAlias = "dataset19";
+		String dbName = "dataset19";
 		String logFile = GlobalConfigurations.RO_BASE_PATH + "/DBD-parser/" + "test_log_file_for_dataset19_1.txt";
 		List<Boolean> SWGO = Arrays.asList(true, true, true, true); 
 		int maxQueriesPerWindow = 1000;
@@ -196,7 +196,7 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui
 	           add(UnionOption.ORDER_BY);
 		}};
 		int numOfNewQueries = 1;
-		EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui(dbAlias, VerticaDatabaseLoginConfiguration.class.getSimpleName(), allPossibleQueries, option, numOfNewQueries);
+		EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui(dbName, VerticaDatabaseLoginConfiguration.class.getSimpleName(), allPossibleQueries, option, numOfNewQueries);
 		String s1 = "SELECT * FROM fnma.ident_71 WHERE ident_651 > 1;";
 		String s2 = "SELECT * FROM rcondon.ident_127 WHERE ident_1385 > 1;";
 		String s3 = "SELECT * FROM public.shubh_test WHERE ident_2071 > 1;";
@@ -280,8 +280,8 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui
 	           add(UnionOption.ORDER_BY);
 		}};
 		
-		String dbAlias = "dataset19";
-		Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMapFromDefaultSources(dbAlias, VerticaDatabaseLoginConfiguration.class.getSimpleName()).getSchemas();
+		String dbName = "dataset19";
+		Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMapFromDefaultSources(dbName, VerticaDatabaseLoginConfiguration.class.getSimpleName()).getSchemas();
 		String dbConfigFile = GlobalConfigurations.RO_BASE_PATH + "/databases.conf"; 
 		String unionSqlQueriesFile = GlobalConfigurations.RO_BASE_PATH + "/processed_workloads/real/dataset19/" + "parsed-runnable-improvable.timestamped";
 		String windowFile = GlobalConfigurations.RO_BASE_PATH + "/processed_workloads/real/dataset19/dvals/d0-4.945309816428576E-4/" + "w2.queries";
@@ -322,7 +322,7 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui
 
 	public static void unitTest4() throws Exception {
 		Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMapFromDefaultSources("dataset19", VerticaDatabaseLoginConfiguration.class.getSimpleName()).getSchemas();
-		String dbAlias = "dataset19";
+		String dbName = "dataset19";
 		String logFile = GlobalConfigurations.RO_BASE_PATH + "/DBD-parser/" + "test_log_file_for_dataset19_1.txt";
 		int maxQueriesPerWindow = 1000;
 		List<String> allPossibleQueries = SqlLogFileManager.loadQueryStringsFromPlainFile(logFile, maxQueriesPerWindow);
@@ -334,7 +334,7 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui
 	           add(UnionOption.ORDER_BY);
 		}};
 		int numOfNewQueries = 3;
-		EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui(dbAlias, VerticaDatabaseLoginConfiguration.class.getSimpleName(), allPossibleQueries, option, numOfNewQueries);
+		EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui(dbName, VerticaDatabaseLoginConfiguration.class.getSimpleName(), allPossibleQueries, option, numOfNewQueries);
 		String windowFile = GlobalConfigurations.RO_BASE_PATH + "/DBD-parser/" + "big_window_for_dataset19.txt";
 		List<String> w1 = SqlLogFileManager.loadQueryStringsFromPlainFile(windowFile, maxQueriesPerWindow);
 		List<Query_SWGO> wq1 = new Query_SWGO.QParser().convertSqlListToQuery(w1, schemaMap);

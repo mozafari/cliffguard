@@ -114,6 +114,10 @@ public class EuclideanDistanceWithSimpleUnion extends EuclideanDistance {
 			this(schemaMap, 1d, whichClauses);
 		}
 		
+		public Set<UnionOption> getWhichClauses() {
+			return whichClauses;
+		}
+		
 		@Override
 		public EuclideanDistanceWithSimpleUnion distance(List<Query> leftWindow,
 				List<Query> rightWindow) throws Exception {

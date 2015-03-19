@@ -40,9 +40,9 @@ public class EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile
 	private boolean useExplainInsteadOfRunningQueries;
 
 
-	public EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile(String dbAlias, String DBVendor, List<String> allPossibleSqlQueries,
+	public EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile(String dbName, String DBVendor, List<String> allPossibleSqlQueries,
 			Set<UnionOption> whichClauses, int numOfNewQueries, LatencyMeter latencyMeter, Double latencyPenaltyFactor, boolean useExplainInsteadOfRunningQueries) throws Exception {
-		super(dbAlias, DBVendor, allPossibleSqlQueries, whichClauses);
+		super(dbName, DBVendor, allPossibleSqlQueries, whichClauses);
 		this.numOfNewQueries = numOfNewQueries;
 		this.latencyMeter = latencyMeter;
 		this.latencyPenaltyFactor = latencyPenaltyFactor;
@@ -225,7 +225,7 @@ public class EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile
 	
 	
 	public static LatencyMeter createLatencyMeterForUnitTesting() throws Exception {
-		String dbAlias = "dataset19";
+		String dbName = "dataset19";
 		String topDir = GlobalConfigurations.RO_BASE_PATH + "/processed_workloads/real/dataset19/dvals/";
 		String configFile = GlobalConfigurations.RO_BASE_PATH + "/databases.conf"; 
 		List<DatabaseLoginConfiguration> allDatabaseConfigurations = DatabaseLoginConfiguration.loadDatabaseConfigurations(configFile, VerticaDatabaseLoginConfiguration.class.getSimpleName());
@@ -234,7 +234,7 @@ public class EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile
 		if (experimentCache==null)
 			experimentCache = new ExperimentCache(cacheFilename, 100, 1, 1, new VerticaQueryPlanParser());//?
 		
-		DatabaseLoginConfiguration fullDB = DatabaseLoginConfiguration.getFullDB(allDatabaseConfigurations, dbAlias);
+		DatabaseLoginConfiguration fullDB = DatabaseLoginConfiguration.getFullDB(allDatabaseConfigurations, dbName);
 		
 		DBDeployer dbDeployer = new VerticaDeployer(LogLevel.STATUS, fullDB , experimentCache, false);
 							
@@ -300,8 +300,8 @@ public class EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile
 	           add(UnionOption.ORDER_BY);
 		}};
 		
-		String dbAlias = "dataset19";
-		Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMapFromDefaultSources(dbAlias, VerticaDatabaseLoginConfiguration.class.getSimpleName()).getSchemas();
+		String dbName = "dataset19";
+		Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMapFromDefaultSources(dbName, VerticaDatabaseLoginConfiguration.class.getSimpleName()).getSchemas();
 		String topDir = GlobalConfigurations.RO_BASE_PATH + "/processed_workloads/real/dataset19/dvals/";
 		String dbConfigFile = GlobalConfigurations.RO_BASE_PATH + "/databases.conf"; 
 		String unionSqlQueriesFile = GlobalConfigurations.RO_BASE_PATH + "/processed_workloads/real/dataset19/" + "parsed-runnable-improvable.timestamped";

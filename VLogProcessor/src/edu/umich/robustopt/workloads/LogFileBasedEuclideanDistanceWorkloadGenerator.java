@@ -51,9 +51,9 @@ public abstract class LogFileBasedEuclideanDistanceWorkloadGenerator extends Que
 		this(schema, constManager, allPossibleSqlQueries, 1d);
 	}
 	
-	public LogFileBasedEuclideanDistanceWorkloadGenerator(String dbAlias, String databaseLoginFile, String DBVendor, 
+	public LogFileBasedEuclideanDistanceWorkloadGenerator(String dbName, String databaseLoginFile, String DBVendor, 
 			List<String> allPossibleSqlQueries) throws Exception{
-		super(dbAlias, databaseLoginFile, DBVendor);
+		super(dbName, databaseLoginFile, DBVendor);
 		if (allPossibleSqlQueries == null) {
 			throw new Exception("The list of queries should not be null");
 		} else if (allPossibleSqlQueries.size() == 0) {
@@ -72,9 +72,9 @@ public abstract class LogFileBasedEuclideanDistanceWorkloadGenerator extends Que
 		this.allPossibleLogQueries = new ArrayList<Query>(uniqueQueries);
 	}
 	
-	public LogFileBasedEuclideanDistanceWorkloadGenerator(Map<String, Schema> schema, String dbAlias, 
+	public LogFileBasedEuclideanDistanceWorkloadGenerator(Map<String, Schema> schema, String dbName, 
 			double samplingRate, File f, List<String> allPossibleSqlQueries) throws Exception{
-		super(schema, dbAlias, samplingRate, f);
+		super(schema, dbName, samplingRate, f);
 		if (allPossibleSqlQueries == null) {
 			throw new Exception("The list of queries should not be null");
 		} else if (allPossibleSqlQueries.size() == 0) {
@@ -97,12 +97,12 @@ public abstract class LogFileBasedEuclideanDistanceWorkloadGenerator extends Que
 		this(schema, null, allPossibleSqlQueries);
 	}
 	
-	public LogFileBasedEuclideanDistanceWorkloadGenerator(String dbAlias, String DBVendor, List<String> allPossibleSqlQueries) throws Exception{
-		this(SchemaUtils.GetSchemaMapFromDefaultSources(dbAlias, DBVendor).getSchemas(), null, allPossibleSqlQueries);
+	public LogFileBasedEuclideanDistanceWorkloadGenerator(String dbName, String DBVendor, List<String> allPossibleSqlQueries) throws Exception{
+		this(SchemaUtils.GetSchemaMapFromDefaultSources(dbName, DBVendor).getSchemas(), null, allPossibleSqlQueries);
 	}
 
-	public LogFileBasedEuclideanDistanceWorkloadGenerator(String dbAlias, List<DatabaseLoginConfiguration> dbLogins, List<String> allPossibleSqlQueries) throws Exception{
-		this(SchemaUtils.GetSchemaMap(dbAlias, dbLogins).getSchemas(), null, allPossibleSqlQueries);
+	public LogFileBasedEuclideanDistanceWorkloadGenerator(String dbName, List<DatabaseLoginConfiguration> dbLogins, List<String> allPossibleSqlQueries) throws Exception{
+		this(SchemaUtils.GetSchemaMap(dbName, dbLogins).getSchemas(), null, allPossibleSqlQueries);
 	}
 		
 	@Override

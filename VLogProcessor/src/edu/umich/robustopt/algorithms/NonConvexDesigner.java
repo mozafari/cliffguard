@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.math.stat.StatUtils;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.xml.XmlBeanFactory;
+import org.springframework.core.io.FileSystemResource;
 
 import edu.umich.robustopt.clustering.Cluster;
 import edu.umich.robustopt.clustering.ClusteredWindow;
@@ -20,6 +23,7 @@ import edu.umich.robustopt.common.BLog.LogLevel;
 import edu.umich.robustopt.dbd.DBDeployer;
 import edu.umich.robustopt.dbd.DBDesigner;
 import edu.umich.robustopt.dbd.DesignParameters;
+import edu.umich.robustopt.dblogin.DatabaseLoginConfiguration;
 import edu.umich.robustopt.metering.ExperimentCache;
 import edu.umich.robustopt.metering.LatencyMeter;
 import edu.umich.robustopt.metering.PerformanceRecord;
@@ -32,6 +36,7 @@ import edu.umich.robustopt.util.Timer;
 import edu.umich.robustopt.util.Triple;
 import edu.umich.robustopt.workloads.DistributionDistance;
 import edu.umich.robustopt.workloads.DistributionDistanceGenerator;
+import edu.umich.robustopt.workloads.EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile;
 import edu.umich.robustopt.workloads.WorkloadGenerator;
 
 public class NonConvexDesigner extends RobustDesigner {
@@ -53,7 +58,7 @@ public class NonConvexDesigner extends RobustDesigner {
 	private final double maxFactionOfWorstSolutions; // used for choosing worst designs 
 	private final double avgDistanceFactorToFormAGap; // used for choosing worst designs
 	private final double noticeableRelativeDifference; // used when comparing performance of two designs
-	private final DistributionDistanceGenerator distGenerator;
+	private DistributionDistanceGenerator distGenerator;
 	
 	public NonConvexDesigner(int version, LogLevel verbosity, DBDesigner dbDesigner,
 			DBDeployer dbDeployer, DesignParameters designMode,
@@ -606,6 +611,10 @@ public class NonConvexDesigner extends RobustDesigner {
 		return signature;
 	}
 
+	public String summarizeParameters() {
+		return signature();
+	}
+	
 	protected String signature(int iteration) {
 		String signature = "designMode=" + designParameters + ", purtubs=" + howManyPurturbation 
 				+ ", iterationsToConverge=" + iteration
@@ -628,14 +637,22 @@ public class NonConvexDesigner extends RobustDesigner {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		List<Integer> a = new ArrayList<Integer>();
-		a.add(10); a.add(20);
-		
-		List<Integer> b = new ArrayList<Integer>();
-		b.add(10); b.add(20);
-		
-		if (a.equals(b))
-			System.out.println("They are equal!");
+		NonConvexDesigner nonConvexDesigner = loadNonConvexDesignerFromFile("/Users/sina/robust-opt/VLogProcessor/data/cliffguard.conf", "default", null, null, null, null);
+	}
+
+	public static NonConvexDesigner loadNonConvexDesignerFromFile(String configFile, String beanName, DBDesigner dbDesigner, DBDeployer dbDeployer, LatencyMeter latencyMeter, ExperimentCache experimentCache) {
+        BeanFactory factory = new XmlBeanFactory(new FileSystemResource(configFile));
+        NonConvexDesigner nonConvexDesigner = (NonConvexDesigner) factory.getBean(beanName);
+		nonConvexDesigner.dbDesigner = dbDesigner;
+		nonConvexDesigner.dbDeployer = dbDeployer;
+		nonConvexDesigner.latencyMeter = latencyMeter;
+		nonConvexDesigner.experimentCache = experimentCache;		
+		if (nonConvexDesigner.workloadGenerator instanceof EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile) {
+			EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile workloadGen = (EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile) nonConvexDesigner.workloadGenerator;
+			workloadGen.setLatencyMeter(latencyMeter);
+		}
+        
+		return nonConvexDesigner;
 	}
 
 }

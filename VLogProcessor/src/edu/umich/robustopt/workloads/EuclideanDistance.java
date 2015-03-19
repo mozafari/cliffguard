@@ -98,6 +98,10 @@ public abstract class EuclideanDistance extends DistributionDistance implements 
 			}
 		}
 		
+		public Double getPenaltyForGoingFromZeroToNonZero() {
+			return generatorPenaltyForGoingFromZeroToNonZero;
+		}
+		
 		//protected abstract EuclideanDistance distance(ClusteredWindow leftWindow, ClusteredWindow rightWindow) throws Exception;
 		
 		protected HashMap<Vector<Boolean>, Double> convertClusteredWindowToHashMap(ClusteredWindow W) throws Exception{

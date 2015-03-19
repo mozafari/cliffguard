@@ -27,7 +27,8 @@ import edu.umich.robustopt.dblogin.SchemaDescriptor;
 
 public class SchemaUtils {
 
-	private static Map<String, Schema> GetSchemaMapFromCacheFile(String dbAlias, String schemaCacheFile) {
+	// Currently we do not check whether the dbName in the file is equal to the given dbName
+	private static Map<String, Schema> GetSchemaMapFromCacheFile(String dbName, String schemaCacheFile) {
 		Map<String, Schema> schemaMap = null;
 		File serializedSchemaFile = new File(schemaCacheFile);
 		try {
@@ -42,37 +43,37 @@ public class SchemaUtils {
 		return schemaMap;
 	}
 
-	public static SchemaDescriptor GetSchemaMapFromDefaultSources(String dbAlias, String VendorSpecificDatabaseLoginName) throws Exception {
+	public static SchemaDescriptor GetSchemaMapFromDefaultSources(String dbName, String VendorSpecificDatabaseLoginName) throws Exception {
 		List<DatabaseLoginConfiguration> defaultDatabases = DatabaseLoginConfiguration.loadDatabaseConfigurations(GlobalConfigurations.RO_BASE_PATH + File.separator + "databases.conf", VendorSpecificDatabaseLoginName);
 		DatabaseLoginConfiguration dbLogin = (defaultDatabases.isEmpty()? null : defaultDatabases.get(0));
-		return GetSchemaMap(dbAlias, dbLogin);
+		return GetSchemaMap(dbName, dbLogin);
 	}
 
-	public static SchemaDescriptor GetSchemaMap(String dbAlias, DatabaseLoginConfiguration dbLogin) throws Exception {
-		File cacheDirForSchema = new File(GlobalConfigurations.RO_BASE_CACHE_PATH + File.separator + dbAlias + ".schema.ser");
+	public static SchemaDescriptor GetSchemaMap(String dbName, DatabaseLoginConfiguration dbLogin) throws Exception {
+		File cacheDirForSchema = new File(GlobalConfigurations.RO_BASE_CACHE_PATH + File.separator + dbName + ".schema.ser");
 		if (!cacheDirForSchema.getParentFile().exists()) {
 			cacheDirForSchema.getParentFile().mkdirs();
 		}
-		return GetSchemaMap(dbAlias, GlobalConfigurations.RO_BASE_CACHE_PATH + "/" + dbAlias+".schema.ser", dbLogin);
+		return GetSchemaMap(dbName, GlobalConfigurations.RO_BASE_CACHE_PATH + "/" + dbName+".schema.ser", dbLogin);
 	}
 
 	
-	public static SchemaDescriptor GetSchemaMap(String dbAlias, List<DatabaseLoginConfiguration> dbLogins) throws Exception {
-		File cacheDirForSchema = new File(GlobalConfigurations.RO_BASE_CACHE_PATH + File.separator + dbAlias + ".schema.ser");
+	public static SchemaDescriptor GetSchemaMap(String dbName, List<DatabaseLoginConfiguration> dbLogins) throws Exception {
+		File cacheDirForSchema = new File(GlobalConfigurations.RO_BASE_CACHE_PATH + File.separator + dbName + ".schema.ser");
 		if (!cacheDirForSchema.getParentFile().exists()) {
 			cacheDirForSchema.getParentFile().mkdirs();
 		}
 		DatabaseLoginConfiguration dbLogin = (dbLogins==null || dbLogins.isEmpty()? null : dbLogins.get(0));
 
-		return GetSchemaMap(dbAlias, GlobalConfigurations.RO_BASE_CACHE_PATH + File.separator + dbAlias+".schema.ser", dbLogin);
+		return GetSchemaMap(dbName, GlobalConfigurations.RO_BASE_CACHE_PATH + File.separator + dbName+".schema.ser", dbLogin);
 	}
 
-	public static SchemaDescriptor GetSchemaMap(String dbAlias, String schemaCacheFile, DatabaseLoginConfiguration dbLogin) throws Exception {
+	public static SchemaDescriptor GetSchemaMap(String dbName, String schemaCacheFile, DatabaseLoginConfiguration dbLogin) throws Exception {
 
 		Connection conn = null; // this value will remain null if we do not need to get the schema from the DB!
 		Map<String, Schema> schemaMap = null;
 
-		schemaMap = GetSchemaMapFromCacheFile(dbAlias, schemaCacheFile);
+		schemaMap = GetSchemaMapFromCacheFile(dbName, schemaCacheFile);
 
 		if (schemaMap == null) {
 			System.out.println("Reading schema map from database");

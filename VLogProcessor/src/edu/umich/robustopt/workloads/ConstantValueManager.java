@@ -46,32 +46,32 @@ public class ConstantValueManager {
 		this.sample = sample;
 	}
 	
-	public ConstantValueManager(String dbAlias, double sample, String databaseLoginFile, String VendorDatabaseLoginName) throws Exception {
+	public ConstantValueManager(String dbName, double sample, String databaseLoginFile, String VendorDatabaseLoginName) throws Exception {
 		this(
 				(databaseLoginFile==null? 
-						SchemaUtils.GetSchemaMapFromDefaultSources(dbAlias, VendorDatabaseLoginName) 
-						: SchemaUtils.GetSchemaMap(dbAlias, DatabaseLoginConfiguration.loadDatabaseConfigurations(databaseLoginFile, VendorDatabaseLoginName))
+						SchemaUtils.GetSchemaMapFromDefaultSources(dbName, VendorDatabaseLoginName) 
+						: SchemaUtils.GetSchemaMap(dbName, DatabaseLoginConfiguration.loadDatabaseConfigurations(databaseLoginFile, VendorDatabaseLoginName))
 				), 
-				loadDataDistribution(dbAlias, 
-									 (databaseLoginFile==null? SchemaUtils.GetSchemaMapFromDefaultSources(dbAlias, VendorDatabaseLoginName) 
-											 				: SchemaUtils.GetSchemaMap(dbAlias, DatabaseLoginConfiguration.loadDatabaseConfigurations(databaseLoginFile, VendorDatabaseLoginName))), 
+				loadDataDistribution(dbName, 
+									 (databaseLoginFile==null? SchemaUtils.GetSchemaMapFromDefaultSources(dbName, VendorDatabaseLoginName) 
+											 				: SchemaUtils.GetSchemaMap(dbName, DatabaseLoginConfiguration.loadDatabaseConfigurations(databaseLoginFile, VendorDatabaseLoginName))), 
 									 sample, 
 									 (databaseLoginFile==null? null : DatabaseLoginConfiguration.loadDatabaseConfigurations(databaseLoginFile, VendorDatabaseLoginName))), 
 				sample);
 	}
 	
-	public ConstantValueManager(String dbAlias, Map<String, ValueDistribution> cachedDists, double samplingRateAppliedToCreateDistribution, String databaseLoginFile, String VendorDatabaseLoginName) throws Exception {
+	public ConstantValueManager(String dbName, Map<String, ValueDistribution> cachedDists, double samplingRateAppliedToCreateDistribution, String databaseLoginFile, String VendorDatabaseLoginName) throws Exception {
 		this((databaseLoginFile==null? 
-				SchemaUtils.GetSchemaMapFromDefaultSources(dbAlias, VendorDatabaseLoginName) 
-				: SchemaUtils.GetSchemaMap(dbAlias, DatabaseLoginConfiguration.loadDatabaseConfigurations(databaseLoginFile, VendorDatabaseLoginName))), 
+				SchemaUtils.GetSchemaMapFromDefaultSources(dbName, VendorDatabaseLoginName) 
+				: SchemaUtils.GetSchemaMap(dbName, DatabaseLoginConfiguration.loadDatabaseConfigurations(databaseLoginFile, VendorDatabaseLoginName))), 
 				cachedDists, samplingRateAppliedToCreateDistribution);
 	}
 
-	private static Map<String, ValueDistribution> loadDataDistribution(String dbAlias, SchemaDescriptor schemaMap, double sample, List<DatabaseLoginConfiguration> databaseLogins) throws Exception {	
+	private static Map<String, ValueDistribution> loadDataDistribution(String dbName, SchemaDescriptor schemaMap, double sample, List<DatabaseLoginConfiguration> databaseLogins) throws Exception {	
 		Map<String, ValueDistribution> distributionMap = null;
 
 		long samplePercentage = Math.round(sample*100);
-		File serializedDistributionFile = new File(RO_BASE_CACHE_PATH, dbAlias+".data_distribution.sampled-"+samplePercentage+".ser");
+		File serializedDistributionFile = new File(RO_BASE_CACHE_PATH, dbName+".data_distribution.sampled-"+samplePercentage+".ser");
 		
 		try {
 			ObjectInputStream in = new ObjectInputStream(new FileInputStream(serializedDistributionFile));
@@ -100,7 +100,7 @@ public class ConstantValueManager {
 			// create a connection to the database
 			if (databaseLogins==null || databaseLogins.isEmpty())
 				throw new Exception("We did not find the ConstantValueManager in a file, and you did not provide a valid database login! " + databaseLogins);
-			DatabaseLoginConfiguration fullDB = DatabaseLoginConfiguration.getFullDB(databaseLogins, dbAlias);
+			DatabaseLoginConfiguration fullDB = DatabaseLoginConfiguration.getFullDB(databaseLogins, dbName);
 			Connection conn = fullDB.createConnection();
 			distributionMap = new HashMap<String, ValueDistribution>();
 			// now retrive the distribution of all columns from the database
@@ -131,12 +131,12 @@ public class ConstantValueManager {
 		oos.close();
 	}
 
-	public static ConstantValueManager RestoreStateFromFile(String dbAlias, double samplingRateAppliedToCreateDistribution, File f, String dbLoginConfigFile, String VendorSpecificDatabaseLoginName) 
+	public static ConstantValueManager RestoreStateFromFile(String dbName, double samplingRateAppliedToCreateDistribution, File f, String dbLoginConfigFile, String VendorSpecificDatabaseLoginName) 
 			throws Exception {
 		ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f));
 		Map<String, ValueDistribution> cachedDists = (Map<String, ValueDistribution>) ois.readObject();
 		ois.close();
-		ConstantValueManager ret = new ConstantValueManager(dbAlias, cachedDists, samplingRateAppliedToCreateDistribution, dbLoginConfigFile, VendorSpecificDatabaseLoginName);
+		ConstantValueManager ret = new ConstantValueManager(dbName, cachedDists, samplingRateAppliedToCreateDistribution, dbLoginConfigFile, VendorSpecificDatabaseLoginName);
 		ret.cachedDistibutions.putAll(cachedDists);
 		return ret;
 	}

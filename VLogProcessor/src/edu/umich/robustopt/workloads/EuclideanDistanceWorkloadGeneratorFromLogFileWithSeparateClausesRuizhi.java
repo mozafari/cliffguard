@@ -37,14 +37,14 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 	}
 	
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(
-			String dbAlias, String DBVendor, List<String> allPossibleSqlQueries, int numOfNewQueries) throws Exception {
-		super(dbAlias, DBVendor, allPossibleSqlQueries);
+			String dbName, String DBVendor, List<String> allPossibleSqlQueries, int numOfNewQueries) throws Exception {
+		super(dbName, DBVendor, allPossibleSqlQueries);
 		this.numOfNewQueries = numOfNewQueries;
 	}
 
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(
-		String dbAlias, List<DatabaseLoginConfiguration> dbLogins, List<String> allPossibleSqlQueries, int numOfNewQueries) throws Exception {
-		super(dbAlias, dbLogins, allPossibleSqlQueries);
+		String dbName, List<DatabaseLoginConfiguration> dbLogins, List<String> allPossibleSqlQueries, int numOfNewQueries) throws Exception {
+		super(dbName, dbLogins, allPossibleSqlQueries);
 		this.numOfNewQueries = numOfNewQueries;
 	}
 
@@ -170,13 +170,13 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 		Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMapFromDefaultSources("dataset19", VerticaDatabaseLoginConfiguration.class.getSimpleName()).getSchemas();
 		String topDir = GlobalConfigurations.RO_BASE_PATH + "/dataset_synthetic_tpch/"; 
 		String dbConfigFile = GlobalConfigurations.RO_BASE_PATH + "/databases.conf"; 
-		String dbAlias = "dataset19";
+		String dbName = "dataset19";
 		String logFile = GlobalConfigurations.RO_BASE_PATH + "/processed_workloads/real/dataset19/parsed.plain";
 		List<Boolean> SWGO = Arrays.asList(true, true, true, true); 
 		int maxQueriesPerWindow = 1000;
 		List<String> allPossibleQueries = SqlLogFileManager.loadQueryStringsFromPlainFile(logFile, maxQueriesPerWindow);
 		int numOfNewQueries = 1;
-		EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(dbAlias, VerticaDatabaseLoginConfiguration.class.getSimpleName(), allPossibleQueries, numOfNewQueries);
+		EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(dbName, VerticaDatabaseLoginConfiguration.class.getSimpleName(), allPossibleQueries, numOfNewQueries);
 		String s1 = "SELECT min(ident_651), ident_2645 FROM fnma.ident_71 WHERE ident_651 > 1 GROUP BY ident_1404, ident_2645 ORDER BY ident_1773, ident_1526;";
 		String s2 = "SELECT * FROM rcondon.ident_127 WHERE ident_1385 > 1;";
 		String s3 = "SELECT * FROM public.shubh_test WHERE ident_2071 > 1;";
@@ -248,8 +248,8 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 	
 	public static void unitTest35() throws Exception {
 		
-		String dbAlias = "dataset19";
-		Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMapFromDefaultSources(dbAlias, VerticaDatabaseLoginConfiguration.class.getSimpleName()).getSchemas();
+		String dbName = "dataset19";
+		Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMapFromDefaultSources(dbName, VerticaDatabaseLoginConfiguration.class.getSimpleName()).getSchemas();
 		String dbConfigFile = GlobalConfigurations.RO_BASE_PATH + "/databases.conf"; 
 		String unionSqlQueriesFile = GlobalConfigurations.RO_BASE_PATH + "/processed_workloads/real/dataset19/" + "parsed-runnable-improvable.timestamped";
 		String windowFile = GlobalConfigurations.RO_BASE_PATH + "/processed_workloads/real/dataset19/dvals/d0-4.945309816428576E-4/" + "w2.queries";
@@ -290,13 +290,13 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 
 	public static void unitTest4() throws Exception {
 		Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMapFromDefaultSources("dataset19", VerticaDatabaseLoginConfiguration.class.getSimpleName()).getSchemas();
-		String dbAlias = "dataset19";
+		String dbName = "dataset19";
 		String logFile = GlobalConfigurations.RO_BASE_PATH + "/DBD-parser/" + "test_log_file_for_dataset19_1.txt";
 		int maxQueriesPerWindow = 1000;
 		List<String> allPossibleQueries = SqlLogFileManager.loadQueryStringsFromPlainFile(logFile, maxQueriesPerWindow);
 		System.out.println("Initializing workload generator...");
 		int numOfNewQueries = 3;
-		EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(dbAlias, VerticaDatabaseLoginConfiguration.class.getSimpleName(), allPossibleQueries, numOfNewQueries);
+		EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(dbName, VerticaDatabaseLoginConfiguration.class.getSimpleName(), allPossibleQueries, numOfNewQueries);
 		String windowFile = GlobalConfigurations.RO_BASE_PATH + "/DBD-parser/" + "big_window_for_dataset19.txt";
 		List<String> w1 = SqlLogFileManager.loadQueryStringsFromPlainFile(windowFile, maxQueriesPerWindow);
 		List<Query_SWGO> wq1 = new Query_SWGO.QParser().convertSqlListToQuery(w1, schemaMap);

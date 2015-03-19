@@ -2,86 +2,40 @@ package edu.umich.robustopt.experiments;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Writer;
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.math.stat.StatUtils;
-
-
-
-
-
-
-
-
-
-import com.relationalcloud.tsqlparser.Parser;
 import com.relationalcloud.tsqlparser.loader.Schema;
-import com.relationalcloud.tsqlparser.parser.ParseException;
 
 import edu.umich.robustopt.algorithms.DesignAlgorithm;
 import edu.umich.robustopt.algorithms.ExistingNominalDesigner;
 import edu.umich.robustopt.algorithms.FutureKnowingNominalDesignAlgorithm;
-import edu.umich.robustopt.algorithms.GreedyMonteCarloRobustDesigner;
-import edu.umich.robustopt.algorithms.IdealDesignAlgorithm;
-import edu.umich.robustopt.algorithms.MajorityCountPreservingDesigner;
-import edu.umich.robustopt.algorithms.MajoritySizePreservingDesigner;
 import edu.umich.robustopt.algorithms.NoDesigner;
 import edu.umich.robustopt.algorithms.NonConvexDesigner;
-import edu.umich.robustopt.algorithms.OptimalMonteCarloRobustDesigner;
-import edu.umich.robustopt.algorithms.RealisticDesignAlgorithm;
 import edu.umich.robustopt.algorithms.RobustDesigner;
-import edu.umich.robustopt.algorithms.WeightedExistingNominalDesigner;
-import edu.umich.robustopt.algorithms.WeightedMajoritySizePreservingDesigner;
-import edu.umich.robustopt.algorithms.OptimalMonteCarloRobustDesigner.QueriesForILP;
-import edu.umich.robustopt.clustering.ClusteredWindow;
-import edu.umich.robustopt.clustering.Clustering_QueryEquality;
-import edu.umich.robustopt.clustering.PartitionedQueryLogAnalyzer;
-import edu.umich.robustopt.clustering.Query;
 import edu.umich.robustopt.clustering.QueryParser;
-import edu.umich.robustopt.clustering.QueryWindow;
 import edu.umich.robustopt.clustering.Query_SWGO;
 import edu.umich.robustopt.clustering.SqlLogFileManager;
 import edu.umich.robustopt.common.BLog;
-import edu.umich.robustopt.common.GlobalConfigurations;
 import edu.umich.robustopt.common.BLog.LogLevel;
 import edu.umich.robustopt.dbd.DBDeployer;
 import edu.umich.robustopt.dbd.DBDesigner;
-import edu.umich.robustopt.dbd.DesignParameters;
-import edu.umich.robustopt.dblogin.DBInvoker;
-import edu.umich.robustopt.dblogin.DatabaseInstance;
 import edu.umich.robustopt.dblogin.DatabaseLoginConfiguration;
-import edu.umich.robustopt.dblogin.SchemaDescriptor;
 import edu.umich.robustopt.metering.DesignExecutionTrace;
-import edu.umich.robustopt.metering.DesignKey;
 import edu.umich.robustopt.metering.ExperimentCache;
 import edu.umich.robustopt.metering.LatencyMeter;
 import edu.umich.robustopt.metering.PerformanceRecord;
 import edu.umich.robustopt.microsoft.MicrosoftDatabaseLoginConfiguration;
 import edu.umich.robustopt.microsoft.MicrosoftDeployer;
-import edu.umich.robustopt.microsoft.MicrosoftDesignAddMode;
-import edu.umich.robustopt.microsoft.MicrosoftDesignKeepMode;
-import edu.umich.robustopt.microsoft.MicrosoftDesignOnlineOption;
-import edu.umich.robustopt.microsoft.MicrosoftDesignParameters;
 import edu.umich.robustopt.microsoft.MicrosoftDesigner;
 import edu.umich.robustopt.microsoft.MicrosoftLatencyMeter;
 import edu.umich.robustopt.microsoft.MicrosoftQueryPlanParser;
@@ -89,34 +43,21 @@ import edu.umich.robustopt.physicalstructures.DeployedPhysicalStructure;
 import edu.umich.robustopt.physicalstructures.PhysicalDesign;
 import edu.umich.robustopt.physicalstructures.PhysicalStructure;
 import edu.umich.robustopt.util.SchemaUtils;
-import edu.umich.robustopt.util.StringUtils;
 import edu.umich.robustopt.util.Timer;
 import edu.umich.robustopt.util.Triple;
-import edu.umich.robustopt.util.TwoWayMap;
-import edu.umich.robustopt.vertica.VerticaConnection;
 import edu.umich.robustopt.vertica.VerticaDatabaseLoginConfiguration;
 import edu.umich.robustopt.vertica.VerticaDeployer;
-import edu.umich.robustopt.vertica.VerticaDesignMode;
-import edu.umich.robustopt.vertica.VerticaDesignParameters;
 import edu.umich.robustopt.vertica.VerticaDesigner;
 import edu.umich.robustopt.vertica.VerticaLatencyMeter;
 import edu.umich.robustopt.vertica.VerticaQueryPlanParser;
 import edu.umich.robustopt.workloads.DistributionDistance;
 import edu.umich.robustopt.workloads.DistributionDistanceGenerator;
 import edu.umich.robustopt.workloads.DistributionDistancePair;
-import edu.umich.robustopt.workloads.EuclideanDistance;
 import edu.umich.robustopt.workloads.EuclideanDistanceWithSeparateClauses;
 import edu.umich.robustopt.workloads.EuclideanDistanceWithSimpleUnion;
 import edu.umich.robustopt.workloads.EuclideanDistanceWithSimpleUnionAndLatency;
-import edu.umich.robustopt.workloads.EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionCombined;
-import edu.umich.robustopt.workloads.EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui;
 import edu.umich.robustopt.workloads.EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionShiyong;
-import edu.umich.robustopt.workloads.EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi;
-import edu.umich.robustopt.workloads.SimpleTPCHSyntheticWorkloadGenerator;
-import edu.umich.robustopt.workloads.Synthetic_SWGO_WorkloadGenerator;
-import edu.umich.robustopt.workloads.WideTableWorkloadGenerator;
-import edu.umich.robustopt.workloads.WorkloadGenerator;
-import edu.umich.robustopt.workloads.EuclideanDistanceWithSimpleUnion.Generator;
+
 
 public class CliffGuard {
 	

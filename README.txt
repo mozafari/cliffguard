@@ -14,19 +14,21 @@ Table of Contents:
 * About CliffGuard
 ********************************************
 
-CliffGuard is an open-source software suite for analyzing database workload, deriving performance insights, and most importantly deliver robust physical designs that remain effective in spite of workload changes.
+CliffGuard is an open-source software suite for analyzing database workloads, deriving performance insights, and most importantly delivering robust physical designs that remain effective in spite of workload changes.
 
 CliffGuard is developed by Barzan Mozafari et al. at the University of Michigan, Ann Arbor. For all inquiries, please contact mozafari <AT> umich.edu
 
 For more documentations and information visit http://cliffguard.org
 
-CliffGuard currently supports both HP Vertica and Microsoft’s SQL Server databases.
+CliffGuard currently supports the following database management systems:
+- HP Vertica 
+- Microsoft SQL Server
 
 ********************************************
 * List of Tools
 ********************************************
 
-CliffGuard comes with a number tools. The current documentation describes the following ones:
+CliffGuard comes with a number oftools. The current documentation describes the following ones:
 
 * CliffGuard: The core engine that can find a robust design for any database management system. The produced physical design is guaranteed to be robust (i.e., stay optimal) against future changes of workload as long as the future workload remains within a user-specified range of the original workload.
 	

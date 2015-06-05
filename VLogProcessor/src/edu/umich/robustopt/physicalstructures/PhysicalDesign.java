@@ -1,5 +1,7 @@
 package edu.umich.robustopt.physicalstructures;
 
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,6 +71,29 @@ public class PhysicalDesign implements Serializable {
 			return false;
 		return true;
 	}
+
+	private boolean generateDeploymentScript(PrintStream ps) {
+		System.err.println("This method needs to be implemented first");
+		return true;		
+	}
+
+	public boolean generateDeploymentScript(String outputScriptFilename) {
+		PrintStream ps;
+		try {
+			ps = new PrintStream(outputScriptFilename);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		return generateDeploymentScript(ps);
+	}
+
+	
+	public boolean generateDeploymentScript() {
+		return generateDeploymentScript(System.out);
+	}
+	
 
 	
 	

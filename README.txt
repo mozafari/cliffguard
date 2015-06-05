@@ -5,10 +5,11 @@ Table of Contents:
      About CliffGuard
      List of Tools
      Usage Guide: WorkloadMiner
-     Usage Guide: CliffGuard
-     Usage Guide: VTester
+     Usage Guide: CliffGuard Designer
      Usage Guide: Scrubber
+     Usage Guide: VTester
      Miscellaneous
+     License
 
 ********************************************
 * About CliffGuard
@@ -30,9 +31,43 @@ CliffGuard currently supports the following database management systems:
 
 CliffGuard comes with a number oftools. The current documentation describes the following ones:
 
-* CliffGuard: The core engine that can find a robust design for any database management system. The produced physical design is guaranteed to be robust (i.e., stay optimal) against future changes of workload as long as the future workload remains within a user-specified range of the original workload.
+* CliffGuard Designer: The core engine that can find a robust design for any database management system. The produced physical design is guaranteed to be robust (i.e., stay optimal) against future changes of workload as long as the future workload remains within a user-specified range of the original workload.
 	
 * WorkloadMiner: An auxiliary tool that analyzes as set of past SQL queries, computes various statistics about their nature, and mines their underlying distribution over time.
+
+* Scrubber: A performance-preserving workload scrubber, scrubbing a database schema, database histogram, set of SQL queries, 
+
+********************************************
+* Usage Guide: CliffGuard Designer 
+********************************************
+
+Usage:
+java -cp CliffGuard.jar edu.umich.robustopt.experiments.CliffGuard db_vendor db_login_file deployer_db_alias designer_db_alias cliffGuard_config_file cliffGuard_setting_id query_file cache_directory local_path_to_stats_file distance_value(>=0 & <=1) output_deployment_script_filename
+
+db_vendor: either 'vertica' or 'microsoft' (without quotations)
+
+db_login_file: an xml file with the login information (see databases.conf as an example)
+
+deployer_db_alias, designer_db_alias: the short names of the entries in db_login_file for the two servers in the cluster intended for use by CliffGuard. CliffGuard uses the designer_db_alias server to invoke Vertica's internal designer with different parameters. CliffGuard uses deployer_db_alias to test different designers by deploying them on deployer_db_alias before deploying them on the entire cluster. We recommend that you have an empty instance of your database on designer_db_alias (identical schema as your actual database but with no user data) but have a non-empty database on deployer_db_alias. However, instead of copying your entire data to deployer_db_alias, you can alternatively copy a smaller sample of your entire data onto deployer_db_alias.
+Note: deployer_db_alias and designer_db_aliass can be the same. These values are simply the unique ID of the login information entries in the  db_login_file.
+
+cliffGuard_config_file: an XML file with parameter values for CliffGuard's deisgn algorithm (see cliffguard.conf as an example) 
+
+cliffGuard_setting_id: the bean ID of the entry with class="edu.umich.robustopt.algorithms.NonConvexDesigner" in the cliffGuard_config_file that  you wish to use for loading the algorithm parameters from.
+
+query_file: a CSV file (using | as separators) with timestamp followed by a single query in each line
+	For example: 
+	2011-12-14 19:38:51|select avg(salary) from employee
+	2011-12-14 19:38:51|commit
+
+cache_directory: a directory where CliffGuard algorithm can load a previously generated cache file. If such a cache file does not exist in this directory, then CliffGuard will create a new cache file there.
+
+local_path_to_stats_file: the file path to the statistics file on the server hosting designer_db_alias. Note that you need to manually export the statistics from your actual database and copy the statistics file to server hosting designer_db_alias. This file does not have to be on the same server that you are running the CliffGuard tool on.
+
+distance_value: a number between 0 and 1. A typically reasonable value is 0.01. To achieve the best results, you can run the WorkloadMiner tool on your past workload to gain insight into how each window of your queries have changed in the past. For example, if you would like to run your designer once a month, then you need to use your WorkloadMiner on your past query logs first to measure how much your workload has varied each month compared to the previous month. Then, you can simply take the average of the change between consecutive months, or their 90% quantile, maximum or even 3 times the maximum value or even higher. The higher this value, the greater the degree of robustness. The downside of higher values of distance_value is that you may lose too much optimality unnecessarily. Moreover, note that the current implementation may not be able to find a design if your requested value of distance_value is too high (depending on how large your provided query file is). 
+
+output_deployment_script_filename: the path to the file that you would like CliffGuard to write the deployment statements to. Note that if this file already exists,the previous content of this file will be erased once CliffGuard is invoked.
+
 
 ********************************************
 * Usage Guide: WorkloadMiner
@@ -48,7 +83,7 @@ db_login_file. In other words, the db_alias is used to find the appropriate logi
 
 db_login_file: an xml file with the login information (see databases.conf as an example)
 
-query_file: an CSV file (using | as separators) with timestamp followed by a single query in each line
+query_file: a CSV file (using | as separators) with timestamp followed by a single query in each line
 	For example: 
 	2011-12-14 19:38:51|select avg(salary) from employee
 	2011-12-14 19:38:51|commit
@@ -572,3 +607,10 @@ order by 4 desc;
      272 |          339 |          4 | 00:48:29.943993 |           117 |  0.040206959405902215
      124 |          158 |          1 | 00:10:18.299586 |         17982 | 29.082988905640315276
 (361 rows)
+
+********************************************
+* License
+********************************************
+
+
+

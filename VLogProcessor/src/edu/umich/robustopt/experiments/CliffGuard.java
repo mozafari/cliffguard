@@ -160,6 +160,12 @@ public class CliffGuard {
 		experimentCache.saveTheEntireCache(); 
 		dbDesigner.closeConnection();
 		dbDeployer.closeConnection();
+		boolean success = design.generateDeploymentScript(outputScriptFilename);
+		if (!success) {
+			log.error("CliffGuard could not write the deployment script to the specified output file '"+ outputScriptFilename
+					+"'. Thus, the script is going to be printed to the terminal, as follows:\n\n");
+			design.generateDeploymentScript(); // write to the console
+		}
 		printStatistics(dbDesigner, dbDeployer, latencyMeter, experimentCache);
 		log.status(LogLevel.STATUS, "Finished the design. The output is stored in " + outputScriptFilename  + "\n============================================================\n\n");
 		return experimentCache.getNewFileName();
@@ -739,11 +745,11 @@ public class CliffGuard {
 		
 		String usageMessage = "Usage: " 
 				+ "db_vendor "
-				+ "database_login_file "
+				+ "db_login_file "
 				+ "deployer_db_alias "
 				+ "designer_db_alias "
-				+ "cliffGuard_config_file"
-				+ "cliffGuard_setting_id"
+				+ "cliffGuard_config_file "
+				+ "cliffGuard_setting_id "
 				+ "timestampedInputQueryFile " 
 				+ "cache_directory "
 				+ "localPathToStatsFile "

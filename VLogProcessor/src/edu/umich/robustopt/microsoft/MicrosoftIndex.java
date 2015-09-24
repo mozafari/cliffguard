@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.umich.robustopt.physicalstructures.Index;
+import edu.umich.robustopt.common.RecordedStatement;
 
 public class MicrosoftIndex extends Index implements Serializable {
 
@@ -142,11 +143,11 @@ public class MicrosoftIndex extends Index implements Serializable {
 		return true;
 	}
 
-	public boolean deploy(Connection conn) {
+	public boolean deploy(Connection conn) throws Exception {
 		return deploy(conn, false);
 	}
 
-	public boolean deploy(Connection conn, boolean debug) {
+	public boolean deploy(Connection conn, boolean debug) throws Exception {
 
 		String createIndexSql = "CREATE";
 
@@ -213,7 +214,8 @@ public class MicrosoftIndex extends Index implements Serializable {
 
 		try
 		{
-			Statement stmt = conn.createStatement();
+			Statement statement = conn.createStatement();
+			RecordedStatement stmt = new RecordedStatement(statement, this);
 			stmt.executeUpdate(createIndexSql);
 			stmt.close();
 		} catch (SQLException e) {

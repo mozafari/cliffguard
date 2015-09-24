@@ -5,10 +5,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public abstract class PhysicalStructure implements Serializable, Cloneable {
 	private static final long serialVersionUID = -7287780051600870156L;
 	private Double diskSizeInGigabytes = null;
+	private ArrayList<String> deployCommands = new ArrayList<String>();
 
 	public Double getDiskSizeInGigabytes() {
 		return diskSizeInGigabytes;
@@ -40,6 +42,18 @@ public abstract class PhysicalStructure implements Serializable, Cloneable {
 	    catch (Exception e) {
 	        throw new RuntimeException(e);
 	    }		
+	}
+
+	public void writeToDeployCommands(String sql) {
+		deployCommands.add(sql);
+	}
+
+	public String getDeployCommands() {
+		StringBuilder stringBuilder = new StringBuilder();
+		for (String s : deployCommands) {
+			stringBuilder.append(s + '\n');
+		}
+		return stringBuilder.toString();
 	}
 
 	public abstract String getHumanReadableSummary();

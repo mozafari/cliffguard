@@ -817,7 +817,7 @@ public class CliffGuard {
 
 		DatabaseLoginConfiguration deployerConfig = DatabaseLoginConfiguration.findDBAliasInList(deployer_db_alias, allDatabaseConfigurations);
 		DatabaseLoginConfiguration designerConfig = DatabaseLoginConfiguration.findDBAliasInList(designer_db_alias, allDatabaseConfigurations);
-		if (deployerConfig==null || designerConfig==null || deployerConfig.getDBname()!=designerConfig.getDBname())
+		if (deployerConfig==null || designerConfig==null || !deployerConfig.getDBname().equals(designerConfig.getDBname()))
 			throw new Exception("Your aliases either do not exist or refer to databases of different names!");
 		
 		QueryParser queryParser = new Query_SWGO.QParser();

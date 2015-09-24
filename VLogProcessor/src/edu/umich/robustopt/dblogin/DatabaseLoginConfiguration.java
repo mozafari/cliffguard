@@ -269,7 +269,7 @@ public abstract class DatabaseLoginConfiguration implements Cloneable {
     // each DB vendor implements the following function accordingly!
 	public abstract Connection createConnection() throws Exception;
 	
-	public abstract Map<String, Schema> getSchemaMap() throws SQLException; 
+	public abstract Map<String, Schema> getSchemaMap() throws Exception;
 
 	
 }

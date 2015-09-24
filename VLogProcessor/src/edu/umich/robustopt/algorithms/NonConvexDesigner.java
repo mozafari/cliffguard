@@ -594,6 +594,8 @@ public class NonConvexDesigner extends RobustDesigner {
 				int freq = (int) Math.round(allClusters.get(c) * normalizingRatio);
 				if (freq >= 1) { // otherwise, we do not want to create empty clusters!
 					Cluster newCluster = workloadGenerator.createClusterWithNewFrequency(c, freq);
+					if (newCluster == null)
+						throw new Exception("allPossibleQueries file has to include all queries in target query_file");
 					mergedWindow.add(newCluster);
 				}
 			}

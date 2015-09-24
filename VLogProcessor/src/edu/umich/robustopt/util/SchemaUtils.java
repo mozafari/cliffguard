@@ -23,6 +23,8 @@ import edu.umich.robustopt.common.BLog.LogLevel;
 import edu.umich.robustopt.dblogin.DBInvoker;
 import edu.umich.robustopt.dblogin.DatabaseLoginConfiguration;
 import edu.umich.robustopt.dblogin.SchemaDescriptor;
+import edu.umich.robustopt.microsoft.MicrosoftDatabaseLoginConfiguration;
+import edu.umich.robustopt.vertica.VerticaDatabaseLoginConfiguration;
 
 
 public class SchemaUtils {
@@ -43,7 +45,14 @@ public class SchemaUtils {
 		return schemaMap;
 	}
 
-	public static SchemaDescriptor GetSchemaMapFromDefaultSources(String dbName, String VendorSpecificDatabaseLoginName) throws Exception {
+	public static SchemaDescriptor GetSchemaMapFromDefaultSources(String dbName, String DBVendor) throws Exception {
+		String VendorSpecificDatabaseLoginName = null;
+		if (DBVendor.equalsIgnoreCase("vertica"))
+			VendorSpecificDatabaseLoginName = VerticaDatabaseLoginConfiguration.class.getSimpleName();
+		else if (DBVendor.equalsIgnoreCase("microsoft"))
+			VendorSpecificDatabaseLoginName = MicrosoftDatabaseLoginConfiguration.class.getSimpleName();
+		else
+			throw new Exception("not supported vendor" + DBVendor);
 		List<DatabaseLoginConfiguration> defaultDatabases = DatabaseLoginConfiguration.loadDatabaseConfigurations(GlobalConfigurations.RO_BASE_PATH + File.separator + "databases.conf", VendorSpecificDatabaseLoginName);
 		DatabaseLoginConfiguration dbLogin = (defaultDatabases.isEmpty()? null : defaultDatabases.get(0));
 		return GetSchemaMap(dbName, dbLogin);

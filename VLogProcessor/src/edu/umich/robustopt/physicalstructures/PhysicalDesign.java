@@ -73,7 +73,11 @@ public class PhysicalDesign implements Serializable {
 	}
 
 	private boolean generateDeploymentScript(PrintStream ps) {
-		System.err.println("This method needs to be implemented first");
+		for (PhysicalStructure p : physicalStructures) {
+			if (!p.getDeployCommands().equals(""))
+				ps.println(p.getDeployCommands());
+		}
+		ps.close();
 		return true;		
 	}
 

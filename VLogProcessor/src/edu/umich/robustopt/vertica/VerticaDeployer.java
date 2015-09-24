@@ -24,6 +24,7 @@ import com.vertica.jdbc.VerticaStatement;
 
 import edu.umich.robustopt.common.BLog;
 import edu.umich.robustopt.common.BLog.LogLevel;
+import edu.umich.robustopt.common.RecordedStatement;
 import edu.umich.robustopt.dbd.DBDeployer;
 import edu.umich.robustopt.dblogin.DBInvoker;
 import edu.umich.robustopt.dblogin.DatabaseInstance;
@@ -176,7 +177,8 @@ public class VerticaDeployer extends DBDeployer {
 		try {
 			Timer t = new Timer();
 
-			Statement stmt = dbConnection.createStatement();
+			Statement statement = dbConnection.createStatement();
+			RecordedStatement stmt = new RecordedStatement(statement, structure);
 			ResultSet res;
 			int rc;
 			

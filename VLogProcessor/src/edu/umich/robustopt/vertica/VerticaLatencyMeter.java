@@ -96,7 +96,12 @@ public class VerticaLatencyMeter extends LatencyMeter {
 		while (nAttempts <= 2) {
 			int status = -1;
 			rc = 0;
-			rs = stmt.executeQuery(sql);
+			try {
+				rs = stmt.executeQuery(sql);
+				log.status(LogLevel.STATUS, "Using academic version, barzan_empty_cache() has been called");
+			} catch (SQLException e) {
+				break;
+			}
 			while (rs.next()) {
 				status = rs.getInt(1);
 				++rc;

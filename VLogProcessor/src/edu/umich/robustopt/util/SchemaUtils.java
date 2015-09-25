@@ -45,14 +45,11 @@ public class SchemaUtils {
 		return schemaMap;
 	}
 
-	public static SchemaDescriptor GetSchemaMapFromDefaultSources(String dbName, String DBVendor) throws Exception {
-		String VendorSpecificDatabaseLoginName = null;
-		if (DBVendor.equalsIgnoreCase("vertica"))
+	public static SchemaDescriptor GetSchemaMapFromDefaultSources(String dbName, String VendorSpecificDatabaseLoginName) throws Exception {
+		if (VendorSpecificDatabaseLoginName.equalsIgnoreCase("vertica"))
 			VendorSpecificDatabaseLoginName = VerticaDatabaseLoginConfiguration.class.getSimpleName();
-		else if (DBVendor.equalsIgnoreCase("microsoft"))
+		else if (VendorSpecificDatabaseLoginName.equalsIgnoreCase("microsoft"))
 			VendorSpecificDatabaseLoginName = MicrosoftDatabaseLoginConfiguration.class.getSimpleName();
-		else
-			throw new Exception("not supported vendor" + DBVendor);
 		List<DatabaseLoginConfiguration> defaultDatabases = DatabaseLoginConfiguration.loadDatabaseConfigurations(GlobalConfigurations.RO_BASE_PATH + File.separator + "databases.conf", VendorSpecificDatabaseLoginName);
 		DatabaseLoginConfiguration dbLogin = (defaultDatabases.isEmpty()? null : defaultDatabases.get(0));
 		return GetSchemaMap(dbName, dbLogin);

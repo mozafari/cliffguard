@@ -7,6 +7,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import edu.umich.robustopt.common.RecordedStatement;
 import edu.umich.robustopt.physicalstructures.IndexedView;
 
 public class MicrosoftIndexedView extends IndexedView implements Serializable {
@@ -119,11 +120,11 @@ public class MicrosoftIndexedView extends IndexedView implements Serializable {
 		return true;
 	}
 
-	public boolean deploy(Connection conn) {
+	public boolean deploy(Connection conn) throws Exception{
 		return deploy(conn, false);
 	}
 
-	public boolean deploy(Connection conn, boolean debug) {
+	public boolean deploy(Connection conn, boolean debug) throws Exception{
 		String requiredSetOptions = "SET ARITHABORT ON\n" +
 				"SET CONCAT_NULL_YIELDS_NULL ON\n" +
 				"SET QUOTED_IDENTIFIER ON\n" +
@@ -218,7 +219,8 @@ public class MicrosoftIndexedView extends IndexedView implements Serializable {
 		}
 
 		try {
-			Statement stmt = conn.createStatement();
+			Statement statement = conn.createStatement();
+			RecordedStatement stmt = new RecordedStatement(statement, this);
 			stmt.executeUpdate(requiredSetOptions);
 			stmt.executeUpdate(dropViewIfExists);
 			stmt.executeUpdate(createViewSql);

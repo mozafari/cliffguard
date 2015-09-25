@@ -40,8 +40,8 @@ public class VerticaDatabaseLoginConfiguration extends DatabaseLoginConfiguratio
 	}
 
 	@Override
-	public Map<String, Schema> getSchemaMap() throws SQLException {
-		Connection conn = null;
+	public Map<String, Schema> getSchemaMap() throws Exception {
+		Connection conn = createConnection();
 		// list schemas
 		List<String> schemas = new ArrayList<String>();
 		Statement stmt = conn.createStatement();

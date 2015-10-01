@@ -98,7 +98,7 @@ public abstract class LogFileBasedEuclideanDistanceWorkloadGenerator extends Que
 	}
 	
 	public LogFileBasedEuclideanDistanceWorkloadGenerator(String dbName, String DBVendor, List<String> allPossibleSqlQueries) throws Exception{
-		this(SchemaUtils.GetSchemaMapFromDefaultSources(dbName, DBVendor).getSchemas(), null, allPossibleSqlQueries);
+		this(SchemaUtils.GetSchemaMapFromDefaultSources(dbName, DatabaseLoginConfiguration.getDatabaseSpecificLoginName(DBVendor)).getSchemas(), null, allPossibleSqlQueries);
 	}
 
 	public LogFileBasedEuclideanDistanceWorkloadGenerator(String dbName, List<DatabaseLoginConfiguration> dbLogins, List<String> allPossibleSqlQueries) throws Exception{
@@ -115,21 +115,16 @@ public abstract class LogFileBasedEuclideanDistanceWorkloadGenerator extends Que
 				clusterMap.put(c, c);
 			}
 		}
-		if(clusterMap.containsKey(cluster)){
-			Cluster logCluster = clusterMap.get(cluster);
-			if(newFreq <= logCluster.getFrequency()){
-				return new Cluster(logCluster.getQueries().subList(0, newFreq));
-			} else {
-				List<Query> retClusterList = new ArrayList(logCluster.getQueries()); 
-				int nToAdd = newFreq - logCluster.getFrequency();
-				for(int i = 0; i < nToAdd; ++i){
-					retClusterList.add(logCluster.retrieveAQueryAtRandom());
-				}
-				return new Cluster(retClusterList);
-			}
+		if(newFreq <= cluster.getFrequency()){
+			return new Cluster(cluster.getQueries().subList(0, newFreq));
 		} else {
-			return null;
+			List<Query> retClusterList = new ArrayList(cluster.getQueries()); 
+			int nToAdd = newFreq - cluster.getFrequency();
+			Cluster logCluster = clusterMap.get(cluster);
+			// If clusterMap contains cluster, we get queries from clusterMap. Otherwise, we randomly duplicate existing queries. 
+			for(int i = 0; i < nToAdd; ++i) 
+				retClusterList.add(clusterMap.containsKey(cluster) ? logCluster.retrieveAQueryAtRandom() : cluster.retrieveAQueryAtRandom());
+			return new Cluster(retClusterList);
 		}
 	}
-	
 }

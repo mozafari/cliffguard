@@ -83,7 +83,6 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 		}
 		
 		// get a far away window
-		Query nonExistingQ = new Query_SWGO();
 		int numOfTrials = 10000;
 		double muchLargerDistanceThanRequested = 0;
 		List<Query> qList = new ArrayList<Query>();

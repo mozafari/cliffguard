@@ -95,25 +95,30 @@ public class VerticaDesigner extends DBDesigner {
 	private boolean reset() {
 		try { 
 			Statement stmt = dbConnection.createStatement();
-			ResultSet resultSet = stmt.executeQuery("select dbd_drop_all_workspaces();");
+			ResultSet resultSet;
+			Timer t = new Timer();
+			log.status(LogLevel.VERBOSE, "Waiting on previous ongoing designs ...");
+			try {
+				resultSet = stmt.executeQuery("select dbd_wait_for_deployment('example', 'designname', true);");
+			} catch (SQLException e) {
+				// We should also return true if design doesn't exist
+				return true;
+			}
+			if (!resultSet.next())
+				throw new SQLException("Could not run the dbd_wait_for_deployment function.");
+			else if (resultSet.getInt(1)==0)
+				log.status(LogLevel.DEBUG, "previous designs finished.");
+			else
+				log.error("Unrecognizable output form .");
+			log.status(LogLevel.VERBOSE, "We spent " + t.lapMinutes() + " minutes waiting for previous designs to finish!");
+			
+			resultSet = stmt.executeQuery("select dbd_drop_all_workspaces();");
 			if (!resultSet.next())
 				throw new SQLException("Could not run the clean up process.");
 			else if (resultSet.getInt(1)==1)
 				log.status(LogLevel.DEBUG, "Cleaned previous DBD deign workspaces.");
 			else
 				log.status(LogLevel.DEBUG, "No previous DBD deign workspaces to clean.");
-
-			log.status(LogLevel.VERBOSE, "Waiting on previous ongoing designs ...");
-			Timer t = new Timer();
-			
-			resultSet = stmt.executeQuery("select dbd_wait_populate_design();");
-			if (!resultSet.next())
-				throw new SQLException("Could not run the dbd_wait_populate_design function.");
-			else if (resultSet.getInt(1)==0)
-				log.status(LogLevel.DEBUG, "previous designs finished.");
-			else
-				log.error("Unrecognizable output form .");
-			log.status(LogLevel.VERBOSE, "We spent " + t.lapMinutes() + " minutes waiting for previous designs to finish!");
 			
 			resultSet.close();
 			stmt.close();
@@ -269,7 +274,16 @@ public class VerticaDesigner extends DBDesigner {
 			}
 			
 			log.status(LogLevel.DEBUG, "[INFO] Setting designmode: " + designMode.toString());
-			stmt.execute("select dbd_set_design_policy('example', 'designname', '" + designMode.toString() + "')");
+			res = stmt.executeQuery("SELECT VERSION()");
+			if (!res.next())
+				throw new SQLException("Could not get the version of Vertica");
+			String versionStr = res.getString(1);
+			if (versionStr.contains("v7"))
+				// Vertica Version 7
+				stmt.execute("select dbd_set_optimization_objective('example', 'designname', '" + designMode.toString() + "')");
+			else
+				// Vertica Version 6
+				stmt.execute("select dbd_set_design_policy('example', 'designname', '" + designMode.toString() + "')");
 			
 			String command = "select dbd_run_populate_design_and_deploy"+
 			  "('example', 'designname',"+
@@ -287,7 +301,7 @@ public class VerticaDesigner extends DBDesigner {
 			res.close();
 			
 			// avoid a race condition!
-			stmt.execute("select dbd_wait_populate_design();");
+			stmt.execute("select dbd_wait_for_design('example', 'designname');");
 			
 			boolean finishedWell = false;
 			StringBuilder msg = new StringBuilder();
@@ -318,6 +332,7 @@ public class VerticaDesigner extends DBDesigner {
 			/*
 			 * Now fetch the name of the proposed projections
 			 */
+			stmt.execute("select dbd_wait_for_deployment('example', 'designname', true);");
 			String sql = "select * from v_dbd_example.vs_deployment_projections join v_dbd_example.vs_deployment_projection_statements using (deployment_id, deployment_projection_id);";
 			log.status(LogLevel.DEBUG, sql);
 			res = stmt.executeQuery(sql);

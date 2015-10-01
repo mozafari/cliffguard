@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-
 import edu.umich.robustopt.common.BLog.LogLevel;
 import edu.umich.robustopt.dblogin.DBInvoker;
 import edu.umich.robustopt.dblogin.DatabaseInstance;
@@ -99,6 +98,14 @@ public abstract class DBDeployer extends DBInvoker implements DatabaseInstance {
 		return success;				
 	}
 	
+	public void dropAllStructuresExcept(Set<PhysicalStructure> physicalStructuresToExclude) throws Exception{
+		Set<DeployedPhysicalStructure> deployedPhysicalStructures = new HashSet<DeployedPhysicalStructure>(getCurrentlyDeployedStructures());
+		for (DeployedPhysicalStructure p : deployedPhysicalStructures) {
+			if (!physicalStructuresToExclude.contains(p.getStructure()))
+				dropPhysicalStructureIfExists(dbConnection, p.getSchema(), p.getBasename());
+		}
+	}
+
 	// return true upon success
 	public boolean dropPhysicalStructureIfExists(Connection conn, String schemaName, String structureName) {
 		boolean found = false;

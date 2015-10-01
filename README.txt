@@ -29,7 +29,7 @@ CliffGuard currently supports the following database management systems:
 * List of Tools
 ********************************************
 
-CliffGuard comes with a number oftools. The current documentation describes the following ones:
+CliffGuard comes with a number of tools. The current documentation describes the following ones:
 
 * CliffGuard Designer: The core engine that can find a robust design for any database management system. The produced physical design is guaranteed to be robust (i.e., stay optimal) against future changes of workload as long as the future workload remains within a user-specified range of the original workload.
 	
@@ -42,7 +42,7 @@ CliffGuard comes with a number oftools. The current documentation describes the 
 ********************************************
 
 Usage:
-java -cp CliffGuard.jar edu.umich.robustopt.experiments.CliffGuard db_vendor db_login_file deployer_db_alias designer_db_alias cliffGuard_config_file cliffGuard_setting_id query_file cache_directory local_path_to_stats_file distance_value(>=0 & <=1) output_deployment_script_filename
+java -cp CliffGuard.jar edu.umich.robustopt.experiments.CliffGuard db_vendor db_login_file deployer_db_alias designer_db_alias cliffGuard_config_file cliffGuard_setting_id query_file cache_directory local_path_to_stats_file distance_value(>=0 & <=1) output_deployment_script_filename shouldDeploy(t/f)
 
 db_vendor: either 'vertica' or 'microsoft' (without quotations)
 

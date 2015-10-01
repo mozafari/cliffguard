@@ -60,7 +60,7 @@ public abstract class LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllCl
 	}
 	
 	public LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllClauses(String dbName, String DBVendor, List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses) throws Exception{
-		this(SchemaUtils.GetSchemaMapFromDefaultSources(dbName, DBVendor).getSchemas(), null, allPossibleSqlQueries, whichClauses);
+		this(SchemaUtils.GetSchemaMapFromDefaultSources(dbName, DatabaseLoginConfiguration.getDatabaseSpecificLoginName(DBVendor)).getSchemas(), null, allPossibleSqlQueries, whichClauses);
 	}
 
 	public LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllClauses(String dbName, List<DatabaseLoginConfiguration> dbLogins, List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses) throws Exception{

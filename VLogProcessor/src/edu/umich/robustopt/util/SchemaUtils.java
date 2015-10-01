@@ -23,6 +23,8 @@ import edu.umich.robustopt.common.BLog.LogLevel;
 import edu.umich.robustopt.dblogin.DBInvoker;
 import edu.umich.robustopt.dblogin.DatabaseLoginConfiguration;
 import edu.umich.robustopt.dblogin.SchemaDescriptor;
+import edu.umich.robustopt.microsoft.MicrosoftDatabaseLoginConfiguration;
+import edu.umich.robustopt.vertica.VerticaDatabaseLoginConfiguration;
 
 
 public class SchemaUtils {

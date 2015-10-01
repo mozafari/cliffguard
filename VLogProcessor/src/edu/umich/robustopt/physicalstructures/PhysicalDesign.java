@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import edu.umich.robustopt.common.RecordedStatement;
+
 
 public class PhysicalDesign implements Serializable {
 	private static final long serialVersionUID = -1836780146428511820L;
@@ -73,7 +75,10 @@ public class PhysicalDesign implements Serializable {
 	}
 
 	private boolean generateDeploymentScript(PrintStream ps) {
-		System.err.println("This method needs to be implemented first");
+		for (PhysicalStructure p : physicalStructures)
+			if (!RecordedStatement.getDeployCommands(p).equals(""))
+				ps.println(RecordedStatement.getDeployCommands(p));
+		ps.close();
 		return true;		
 	}
 

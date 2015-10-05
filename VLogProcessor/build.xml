@@ -15,7 +15,8 @@
         <pathelement location="${tsqlparser.location}/lib/javacc-5.0/bin/lib/javacc.jar"/>
         <pathelement location="libs/javacsv.jar"/>
         <pathelement location="libs/vertica-jdk5-6.0.1-0.jar"/>
-        <pathelement location="libs/junit-4.7.jar"/>
+        <pathelement location="libs/junit-4.12.jar"/>
+        <pathelement location="libs/hamcrest-core-1.3.jar"/>
 		<pathelement location="libs/super-csv-2.0.0-beta-1-sources.jar"/>
         <pathelement location="libs/super-csv-2.0.0-beta-1.jar"/>
         <pathelement location="libs/commons-math-2.1.jar"/>
@@ -136,5 +137,14 @@
         <java classname="edu.umich.robustopt.experiments.RunExperiment" failonerror="true" fork="yes">
             <classpath refid="VLogProcessor.classpath"/>
         </java>
+    </target>
+    <target name="test" depends="build">
+        <junit printsummary="yes" haltonFailure="no">
+            <formatter type="plain" usefile="false"/>
+            <classpath refid="VLogProcessor.classpath"/>
+            <batchtest>
+                <fileset dir="bin" includes="**/JTest**.class"/>
+            </batchtest>
+        </junit>
     </target>
 </project>

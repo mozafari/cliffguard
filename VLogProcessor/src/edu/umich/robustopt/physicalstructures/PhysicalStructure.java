@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public abstract class PhysicalStructure implements Serializable, Cloneable {
 	private static final long serialVersionUID = -7287780051600870156L;
@@ -13,7 +14,6 @@ public abstract class PhysicalStructure implements Serializable, Cloneable {
 	public Double getDiskSizeInGigabytes() {
 		return diskSizeInGigabytes;
 	}
-
 
 	public void setDiskSizeInGigabytes(Double diskSizeInGigabytes) {
 		this.diskSizeInGigabytes = diskSizeInGigabytes;
@@ -41,7 +41,9 @@ public abstract class PhysicalStructure implements Serializable, Cloneable {
 	        throw new RuntimeException(e);
 	    }		
 	}
-
+	
+	public abstract ArrayList<String> createPhysicalStructureSQL(String structureName) throws Exception;
+	
 	public abstract String getHumanReadableSummary();
 
 	/**

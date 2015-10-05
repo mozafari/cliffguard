@@ -68,7 +68,7 @@ public class CliffGuard {
 			String cliffGuard_config_file, String cliffGuard_setting_id,
 			Double distanceValue, 
 			List<String> windowQueries, String localPathToStatsFile, 
-			String cacheFilename, String outputScriptFilename, Boolean shouldDeploy) throws Exception {				
+			String cacheFilename, String outputDesignScript, Boolean shouldDeploy, String outputDeploymentScript) throws Exception {				
 		String dbName;
 		if (!emptyDB.getDBname().equals(fullDB.getDBname())) {
 			throw new Exception("The two given servers are hosting different databases:" + emptyDB.getDBname() + " versus " + fullDB.getDBname());
@@ -155,23 +155,25 @@ public class CliffGuard {
 		
 		Timer t = new Timer();
 		PhysicalDesign design = nonConvexDesigner.design(windowQueryPerformance, distributionDistance);
-		if (shouldDeploy) 
+		
+		// generate script files and clean up unneeded structures
+		design.generateSuggestedDesignScript(outputDesignScript);
+		if (shouldDeploy) {
 			dbDeployer.dropAllStructuresExcept(design.getPhysicalStructures());
-		else
+		}
+		else {
 			dbDeployer.dropAllStructures();
+			design.generateDeploymentScript(outputDeploymentScript);
+		}
+		
+		// print summary
 		log.status(LogLevel.STATUS, "finished designing in " + t.lapMinutes() + " minutes, using the following parameters for CliffGuard and distance=" + distanceValue + " : \n" + nonConvexDesigner.summarizeParameters());
 		experimentCache.saveTheEntireCache(); 
 		dbDesigner.closeConnection();
 		dbDeployer.closeConnection();
-
-		boolean success = design.generateDeploymentScript(outputScriptFilename);
-		if (!success) {
-			log.error("CliffGuard could not write the deployment script to the specified output file '"+ outputScriptFilename
-					+"'. Thus, the script is going to be printed to the terminal, as follows:\n\n");
-			design.generateDeploymentScript(); // write to the console
-		}
 		printStatistics(dbDesigner, dbDeployer, latencyMeter, experimentCache);
-		log.status(LogLevel.STATUS, "Finished the design. The output is stored in " + outputScriptFilename  + "\n============================================================\n\n");
+		log.status(LogLevel.STATUS, "Finished the design. The Suggested Design Script is stored in " + outputDesignScript  +  (shouldDeploy ? "" : ". The Deployment Script is stored in "
+				+ outputDeploymentScript) + "\n============================================================\n\n");
 		return experimentCache.getNewFileName();
 	}	
 
@@ -744,9 +746,9 @@ public class CliffGuard {
 		String cacheDir;
 		String localPathToStatsFile;
 		Double distanceValue = 0.0d;
-		String output_deployment_script_filename;
+		String output_suggested_design_script_filename;
 		Boolean shouldDeploy;
-		
+		String output_deployment_script_filename;
 		
 		String usageMessage = "Usage: " 
 				+ "db_vendor "
@@ -759,10 +761,12 @@ public class CliffGuard {
 				+ "cache_directory "
 				+ "localPathToStatsFile "
 				+ "distanceValue(>=0 & <=1) "
-				+ "output_deployment_script_filename "
-				+ "shouldDeploy(t/f)\n";
+				+ "output_suggested_design_script_filename "
+				+ "shouldDeploy(t/f)\n "
+				+ "[output_deployment_script_filename]";
+				
 		
-		if (args.length != 12) {
+		if (args.length < 12 || args.length > 13) {
 			log.error(usageMessage);
 			return;
 		}
@@ -794,9 +798,16 @@ public class CliffGuard {
 			
 			distanceValue = Double.parseDouble(args[idx++]);
 			
-			output_deployment_script_filename = args[idx++];
+			output_suggested_design_script_filename = args[idx++];
 	
 			shouldDeploy = args[idx++].equals("t") ? true : false;
+			
+			output_deployment_script_filename = args.length >= 13 ? args[idx++] : "";
+			
+			if (!shouldDeploy && output_deployment_script_filename.isEmpty()) {
+				log.error("shouldDeploy is set to false. You need to specify output_deployment_script_filename");
+				return;
+			}
 				
 			log.status(LogLevel.STATUS, "Running with the following parameters:\n"
 					+ "\ndb_vendor=" + db_vendor
@@ -809,8 +820,9 @@ public class CliffGuard {
 					+ "\ncache_directory=" + cacheDir
 					+ "\nlocalPathToStatsFile=" + localPathToStatsFile
 					+ "\ndistanceValue=" + distanceValue
-					+ "\noutput_deployment_script_filename=" + output_deployment_script_filename
+					+ "\noutput_suggested_design_script_filename=" + output_suggested_design_script_filename
 					+ "\nshouldDeploy=" + shouldDeploy
+					+ "\noutput_deployment_script_filename=" + output_deployment_script_filename
 					+ "\n\n"
 					);
 		
@@ -846,7 +858,7 @@ public class CliffGuard {
 			String cacheFilename = cacheDir + File.separator + "experiment.cache";
 			String newCacheFileName = null;
 			
-			newCacheFileName = performDesign(designerConfig, deployerConfig, cliffGuard_config_file, cliffGuard_setting_id, distanceValue, allQueryStrings, localPathToStatsFile, cacheFilename, output_deployment_script_filename, shouldDeploy); 
+			newCacheFileName = performDesign(designerConfig, deployerConfig, cliffGuard_config_file, cliffGuard_setting_id, distanceValue, allQueryStrings, localPathToStatsFile, cacheFilename, output_suggested_design_script_filename, shouldDeploy, output_deployment_script_filename); 
 	
 			
 			Timer t = new Timer();

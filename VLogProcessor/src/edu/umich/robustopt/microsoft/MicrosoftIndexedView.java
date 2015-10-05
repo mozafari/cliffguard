@@ -123,16 +123,9 @@ public class MicrosoftIndexedView extends IndexedView implements Serializable {
 	public boolean deploy(Connection conn) throws Exception{
 		return deploy(conn, false);
 	}
-
-	public boolean deploy(Connection conn, boolean debug) throws Exception{
-		String requiredSetOptions = "SET ARITHABORT ON\n" +
-				"SET CONCAT_NULL_YIELDS_NULL ON\n" +
-				"SET QUOTED_IDENTIFIER ON\n" +
-				"SET ANSI_NULLS ON\n" +
-				"SET ANSI_PADDING ON\n" +
-				"SET ANSI_WARNINGS ON\n" +
-				"SET NUMERIC_ROUNDABORT OFF";
-
+	
+	@Override
+	public ArrayList<String> createPhysicalStructureSQL(String structureName) throws Exception {
 		String createViewSql = "CREATE VIEW";
 		createViewSql += " " + schemaName + "." + viewName + " WITH SCHEMABINDING";
 		createViewSql += " AS\n";
@@ -166,8 +159,7 @@ public class MicrosoftIndexedView extends IndexedView implements Serializable {
 		} else if (indexType == MicrosoftIndex.TYPE_NONCLUSTERED) {
 			createIndexSql += " NONCLUSTERED";
 		} else {
-			System.out.println("Unsupported index type: " + indexType);
-			return false;
+			throw new Exception("Unsupported index type: " + indexType);
 		}
 
 		createIndexSql += " INDEX";
@@ -207,27 +199,42 @@ public class MicrosoftIndexedView extends IndexedView implements Serializable {
 		}
 		createIndexSql += ")";
 		//default options
-		createIndexSql += " WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]"; 
+		createIndexSql += " WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]";
+		
+		ArrayList<String> res = new ArrayList<String>();
+		res.add(createViewSql);
+		res.add(createIndexSql);
+		return res;
+	}
+
+	public boolean deploy(Connection conn, boolean debug) throws Exception{
+		String requiredSetOptions = "SET ARITHABORT ON\n" +
+				"SET CONCAT_NULL_YIELDS_NULL ON\n" +
+				"SET QUOTED_IDENTIFIER ON\n" +
+				"SET ANSI_NULLS ON\n" +
+				"SET ANSI_PADDING ON\n" +
+				"SET ANSI_WARNINGS ON\n" +
+				"SET NUMERIC_ROUNDABORT OFF";
+
+		ArrayList<String> createIndexedViewSql = createPhysicalStructureSQL("");
 
 		String dropViewIfExists = "IF EXISTS (SELECT table_name FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = '" + viewName + "') BEGIN\n" +
 				"DROP VIEW " + schemaName + "." + viewName + "\n END";
 
 		if (debug) {
 			System.out.println("DROP VIEW IF EXISTS Statement: \n" + dropViewIfExists);
-			System.out.println("CREATE VIEW Statement: \n" + createViewSql);
-			System.out.println("CREATE INDEX Statement: \n" + createIndexSql);
 		}
 
 		try {
 			RecordedStatement rstmt = new RecordedStatement(conn.createStatement());
 			rstmt.executeUpdate(requiredSetOptions, true);
 			rstmt.executeUpdate(dropViewIfExists, true);
-			rstmt.executeUpdate(createViewSql, true);
-			rstmt.executeUpdate(createIndexSql, true);
+			rstmt.executeUpdate(createIndexedViewSql.get(0), true);
+			rstmt.executeUpdate(createIndexedViewSql.get(1), true);
 			rstmt.close();
 			rstmt.finishDeploy(this);
 		} catch (SQLException e) {
-			System.out.println("Failed to deploy an indexed view with following statements: \n" + requiredSetOptions + "\n" + createViewSql + "\n" + createIndexSql);
+			System.out.println("Failed to deploy an indexed view with following statements: \n" + requiredSetOptions + "\n" + createIndexedViewSql.get(0) + "\n" + createIndexedViewSql.get(1));
 			e.printStackTrace();
 			return false;
 		}

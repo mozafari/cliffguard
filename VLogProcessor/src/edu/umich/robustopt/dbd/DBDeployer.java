@@ -37,6 +37,7 @@ public abstract class DBDeployer extends DBInvoker implements DatabaseInstance {
 	private QueryPlanParser queryPlanParser = null;
 	
 	// book keeping
+	private static HashMap<PhysicalStructure, String> deployCommandsMap = new HashMap<PhysicalStructure, String>();
 	private static transient double secondsSpentRetrievingDiskSize = 0;
 	private static transient long numberOfStructuresDeployed = 0;
 	private transient long secondsSpentInitializing = 0;
@@ -375,6 +376,15 @@ public abstract class DBDeployer extends DBInvoker implements DatabaseInstance {
 			log.error("The requested structure is not currently deployed, cannot determined its size!");
 			return null;
 		}
+	}
+
+	public static void setDeployCommands(PhysicalStructure physicalStructure, String deployCommands) {
+		deployCommandsMap.put(physicalStructure, deployCommands);
+	}
+	
+	public static String getDeployCommands(PhysicalStructure physicalStructure) {
+		String deployCommands = deployCommandsMap.get(physicalStructure);
+		return deployCommands == null ? "" : deployCommands;
 	}
 	
 	public Double retrieveStructureDiskSizeInGigabytes(DeployedPhysicalStructure deployedStruct) throws SQLException {

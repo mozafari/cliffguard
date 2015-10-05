@@ -202,7 +202,7 @@ public class VerticaDeployer extends DBDeployer {
 				int nextVal = res.getInt(1);
 				res.close();
 				
-				String sql = vproj.createProjectionSql(OUR_PROJECTION_SCHEMA, "proj_" + nextVal);
+				String sql = vproj.createPhysicalStructureSQL(OUR_PROJECTION_SCHEMA + "." + "proj_" + nextVal).get(0);
 				rc = rstmt.executeUpdate(sql, true);
 				rstmt.execute("select refresh('" + vproj.getProjection_anchor_table().getQualifiedName()+ "');", true);				
 				rstmt.execute("select make_ahm_now();", true);

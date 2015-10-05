@@ -5,13 +5,12 @@ import java.util.HashMap;
 import java.sql.Statement;
 import java.sql.ResultSet;
 
+import edu.umich.robustopt.dbd.DBDeployer;
 import edu.umich.robustopt.physicalstructures.PhysicalStructure;
 
 public class RecordedStatement {
-	static private HashMap<PhysicalStructure, String> allDeployCommands = new HashMap<>();
-
 	private Statement statement = null;
-	private ArrayList<String> deployCommands = new ArrayList<String>();
+	private ArrayList<String> commandsList = new ArrayList<String>();
 
 	public RecordedStatement(Statement statement) {
 		this.statement = statement;
@@ -21,7 +20,7 @@ public class RecordedStatement {
 		checkNotNull();
 		ResultSet res = statement.executeQuery(sql);
 		if (isRecording)
-			deployCommands.add(sql);
+			commandsList.add(sql);
 		return res;
 	}
 
@@ -29,7 +28,7 @@ public class RecordedStatement {
 		checkNotNull();
 		Boolean res = statement.execute(sql);
 		if (isRecording)
-			deployCommands.add(sql);
+			commandsList.add(sql);
 		return res;
 	}
 
@@ -37,7 +36,7 @@ public class RecordedStatement {
 		checkNotNull();
 		int res = statement.executeUpdate(sql);
 		if (isRecording) 
-			deployCommands.add(sql);
+			commandsList.add(sql);
 		return res;
 	}
 
@@ -46,16 +45,12 @@ public class RecordedStatement {
 		statement.close();
 	}
 
-	static public String getDeployCommands(PhysicalStructure physicalStructure) {
-		return allDeployCommands.containsKey(physicalStructure) ? allDeployCommands.get(physicalStructure) : "";
-	}
-
 	public void finishDeploy(PhysicalStructure physicalStructure) {
 		StringBuilder stringBuilder = new StringBuilder();
-		for (String s : deployCommands) {
+		for (String s : commandsList) {
 			stringBuilder.append(s + '\n');
 		}
-		allDeployCommands.put(physicalStructure, stringBuilder.toString());
+		DBDeployer.setDeployCommands(physicalStructure, stringBuilder.toString());
 	}
 
 	private void checkNotNull() throws Exception{

@@ -30,27 +30,27 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionCombine
         add(UnionOption.ORDER_BY);
 	}};
 
-	private List<String> allPossibleQueryString = null;
+	private List<String> exampleSqlQueries = null;
 	private int numOfNewQueries;
 	
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionCombined(
-			Map<String, Schema> schema, List<String> allPossibleSqlQueries, Set<UnionOption> option, int numOfNewQueries) throws Exception {
-		super(schema, allPossibleSqlQueries, option);
-		this.allPossibleQueryString = allPossibleSqlQueries;
+			Map<String, Schema> schema, List<String> exampleSqlQueries, Set<UnionOption> option, int numOfNewQueries) throws Exception {
+		super(schema, exampleSqlQueries, option);
+		this.exampleSqlQueries = exampleSqlQueries;
 		this.numOfNewQueries = numOfNewQueries;
 	}
 	
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionCombined(
-			String dbAlias, String DBVendor, List<String> allPossibleSqlQueries, Set<UnionOption> option, int numOfNewQueries) throws Exception {
-		super(dbAlias, DBVendor, allPossibleSqlQueries, option);
-		this.allPossibleQueryString = allPossibleSqlQueries;
+			String dbAlias, String DBVendor, List<String> exampleSqlQueries, Set<UnionOption> option, int numOfNewQueries) throws Exception {
+		super(dbAlias, DBVendor, exampleSqlQueries, option);
+		this.exampleSqlQueries = exampleSqlQueries;
 		this.numOfNewQueries = numOfNewQueries;
 	}
 
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionCombined(
 			String dbAlias, List<DatabaseLoginConfiguration> allDatabaseConfigurations,
-			List<String> allPossibleSqlQueries, Set<UnionOption> option, int numOfNewQueries) throws Exception {
-		super(dbAlias, allDatabaseConfigurations, allPossibleSqlQueries, option);
+			List<String> exampleSqlQueries, Set<UnionOption> option, int numOfNewQueries) throws Exception {
+		super(dbAlias, allDatabaseConfigurations, exampleSqlQueries, option);
 		if (option.isEmpty()) {
 			throw new Exception("Should at least has a clause in option");
 		}
@@ -68,10 +68,10 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionCombine
 		if (originalWindow == null) {
 			throw new Exception("We cannot forecast the next window from a null window!");
 		}
-		EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui ed_DimReduce = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui(schema, allPossibleQueryString, whichClauses, numOfNewQueries);
+		EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui ed_DimReduce = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui(schema, exampleSqlQueries, whichClauses, numOfNewQueries);
 		ClusteredWindow nextWindow = ed_DimReduce.forecastNextWindow(originalWindow, distance);
 		if (nextWindow == null) {
-			EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionShiyong ed = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionShiyong(schema, allPossibleQueryString, whichClauses);
+			EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionShiyong ed = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionShiyong(schema, exampleSqlQueries, whichClauses);
 			nextWindow = ed.forecastNextWindow(originalWindow, distance);
 		}
 		return nextWindow;

@@ -261,6 +261,15 @@ public abstract class DatabaseLoginConfiguration implements Cloneable {
 				result = dbConfig;
 		return result;
 	}
+
+	public static String getDatabaseSpecificLoginName(String DBVendor) throws Exception {
+		if (DBVendor.equals("vertica"))
+			return VerticaDatabaseLoginConfiguration.class.getSimpleName();
+		else if (DBVendor.equals("microsoft"))
+			return MicrosoftDatabaseLoginConfiguration.class.getSimpleName();
+		else
+			throw new Exception("DBVendor " + DBVendor + " is not valid");
+	}
 	
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
@@ -269,7 +278,7 @@ public abstract class DatabaseLoginConfiguration implements Cloneable {
     // each DB vendor implements the following function accordingly!
 	public abstract Connection createConnection() throws Exception;
 	
-	public abstract Map<String, Schema> getSchemaMap() throws SQLException; 
+	public abstract Map<String, Schema> getSchemaMap() throws Exception;
 
 	
 }

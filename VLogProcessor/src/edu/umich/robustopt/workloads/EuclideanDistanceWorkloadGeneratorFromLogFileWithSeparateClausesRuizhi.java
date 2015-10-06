@@ -31,20 +31,20 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 
 	private int numOfNewQueries;
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(Map<String, Schema> schemaMap, 
-			List<String> allPossibleSqlQueries, int numOfNewQueries) throws Exception {
-		super(schemaMap, allPossibleSqlQueries); // there's no option to pass to the top level code!
+			List<String> exampleSqlQueries, int numOfNewQueries) throws Exception {
+		super(schemaMap, exampleSqlQueries); // there's no option to pass to the top level code!
 		this.numOfNewQueries = numOfNewQueries;
 	}
 	
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(
-			String dbName, String DBVendor, List<String> allPossibleSqlQueries, int numOfNewQueries) throws Exception {
-		super(dbName, DBVendor, allPossibleSqlQueries);
+			String dbName, String DBVendor, List<String> exampleSqlQueries, int numOfNewQueries) throws Exception {
+		super(dbName, DBVendor, exampleSqlQueries);
 		this.numOfNewQueries = numOfNewQueries;
 	}
 
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(
-		String dbName, List<DatabaseLoginConfiguration> dbLogins, List<String> allPossibleSqlQueries, int numOfNewQueries) throws Exception {
-		super(dbName, dbLogins, allPossibleSqlQueries);
+		String dbName, List<DatabaseLoginConfiguration> dbLogins, List<String> exampleSqlQueries, int numOfNewQueries) throws Exception {
+		super(dbName, dbLogins, exampleSqlQueries);
 		this.numOfNewQueries = numOfNewQueries;
 	}
 
@@ -66,7 +66,7 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 		if (curWindow == null) {
 			throw new Exception("We cannot forecast the next window from a null window!");
 		}
-		int listSize = allPossibleLogQueries.size();
+		int listSize = exampleSqlQueries.size();
 		if (listSize < numOfNewQueries) {
 			throw new Exception("Number of new queries in next workload can't be larger than "
 					+ "the number of queries in log file" + listSize + " < " + numOfNewQueries);
@@ -83,7 +83,6 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 		}
 		
 		// get a far away window
-		Query nonExistingQ = new Query_SWGO();
 		int numOfTrials = 10000;
 		double muchLargerDistanceThanRequested = 0;
 		List<Query> qList = new ArrayList<Query>();
@@ -94,7 +93,7 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 			qList = new ArrayList<Query>();
 			for (int i = 0; i < numOfNewQueries; i++) {
 				int randomC = Randomness.randGen.nextInt(listSize);
-				Query q = allPossibleLogQueries.get(randomC);
+				Query q = exampleSqlQueries.get(randomC);
 				if(!setOfCurWindow.contains(q))
 					qList.add(q);
 				else
@@ -139,12 +138,12 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 		List<Query_SWGO> wq1 = new Query_SWGO.QParser().convertSqlListToQuery(w1, schemaMap);
 		List<Query> qlist1 = Query.convertToListOfQuery(wq1);
 		int maxQueriesPerWindow = 1000;
-		List<String> allPossibleQueries = SqlLogFileManager.loadQueryStringsFromPlainFile(logFile, maxQueriesPerWindow);
+		List<String> exampleSqlQueries = SqlLogFileManager.loadQueryStringsFromPlainFile(logFile, maxQueriesPerWindow);
 		double penalty = 1.5d;
 		EuclideanDistanceWithSeparateClauses dist1 = new EuclideanDistanceWithSeparateClauses(0.14, penalty, 1);
 		//got everything set up
 		int numOfNewQueries = 2;
-		EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi("wide", VerticaDatabaseLoginConfiguration.class.getSimpleName(), allPossibleQueries, numOfNewQueries);
+		EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi("wide", VerticaDatabaseLoginConfiguration.class.getSimpleName(), exampleSqlQueries, numOfNewQueries);
 		Clustering_QueryEquality clusteringQueryEquality = new Clustering_QueryEquality();
 		ClusteredWindow window1 = clusteringQueryEquality.cluster(qlist1);
 		System.out.println(window1);
@@ -174,9 +173,9 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 		String logFile = GlobalConfigurations.RO_BASE_PATH + "/processed_workloads/real/dataset19/parsed.plain";
 		List<Boolean> SWGO = Arrays.asList(true, true, true, true); 
 		int maxQueriesPerWindow = 1000;
-		List<String> allPossibleQueries = SqlLogFileManager.loadQueryStringsFromPlainFile(logFile, maxQueriesPerWindow);
+		List<String> exampleSqlQueries = SqlLogFileManager.loadQueryStringsFromPlainFile(logFile, maxQueriesPerWindow);
 		int numOfNewQueries = 1;
-		EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(dbName, VerticaDatabaseLoginConfiguration.class.getSimpleName(), allPossibleQueries, numOfNewQueries);
+		EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(dbName, VerticaDatabaseLoginConfiguration.class.getSimpleName(), exampleSqlQueries, numOfNewQueries);
 		String s1 = "SELECT min(ident_651), ident_2645 FROM fnma.ident_71 WHERE ident_651 > 1 GROUP BY ident_1404, ident_2645 ORDER BY ident_1773, ident_1526;";
 		String s2 = "SELECT * FROM rcondon.ident_127 WHERE ident_1385 > 1;";
 		String s3 = "SELECT * FROM public.shubh_test WHERE ident_2071 > 1;";
@@ -218,11 +217,11 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 		List<String> w1 = SqlLogFileManager.loadQueryStringsFromPlainFile(windowFile, maxQueriesPerWindow);
 		List<Query_SWGO> wq1 = new Query_SWGO.QParser().convertSqlListToQuery(w1, schemaMap);
 		List<Query> qlist1 = Query.convertToListOfQuery(wq1);
-		List<String> allPossibleQueries = SqlLogFileManager.loadQueryStringsFromPlainFile(logFile, maxQueriesPerWindow);
+		List<String> exampleSqlQueries = SqlLogFileManager.loadQueryStringsFromPlainFile(logFile, maxQueriesPerWindow);
 		EuclideanDistanceWithSeparateClauses dist1 = new EuclideanDistanceWithSeparateClauses(0.18, 2d);
 		//EuclideanDistanceWorkloadGenerator workloadgenerator = new EuclideanDistanceWorkloadGenerator(schemaMap,null, 3);
 		int numOfNewQueries = 1;
-		EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi("wide", VerticaDatabaseLoginConfiguration.class.getSimpleName(), allPossibleQueries, numOfNewQueries);
+		EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi("wide", VerticaDatabaseLoginConfiguration.class.getSimpleName(), exampleSqlQueries, numOfNewQueries);
 		Clustering_QueryEquality clusteringQueryEquality = new Clustering_QueryEquality();
 		ClusteredWindow window1 = clusteringQueryEquality.cluster(qlist1);
 		System.out.println(window1);
@@ -254,10 +253,10 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 		String unionSqlQueriesFile = GlobalConfigurations.RO_BASE_PATH + "/processed_workloads/real/dataset19/" + "parsed-runnable-improvable.timestamped";
 		String windowFile = GlobalConfigurations.RO_BASE_PATH + "/processed_workloads/real/dataset19/dvals/d0-4.945309816428576E-4/" + "w2.queries";
 		SqlLogFileManager<Query_SWGO> sqlLogFileManager = new SqlLogFileManager<Query_SWGO>('|', "\n", new Query_SWGO.QParser(), schemaMap);
-		List<Query_SWGO> allPossibleQueries = sqlLogFileManager.loadTimestampQueriesFromFile(unionSqlQueriesFile);
-		List<String> allPossibleSqlQueries = new ArrayList<String>();
-		for (Query_SWGO q : allPossibleQueries)
-			allPossibleSqlQueries.add(q.getSql());
+		List<Query_SWGO> exampleQueries = sqlLogFileManager.loadTimestampQueriesFromFile(unionSqlQueriesFile);
+		List<String> exampleSqlQueries = new ArrayList<String>();
+		for (Query_SWGO q : exampleQueries)
+			exampleSqlQueries.add(q.getSql());
 				
 		List<String> wq1 = sqlLogFileManager.loadQueryStringsFromPlainFile(windowFile, 10000);
 		List<Query_SWGO> swgo_qlist1 = new Query_SWGO.QParser().convertSqlListToQuery(wq1, schemaMap);
@@ -267,7 +266,7 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 		EuclideanDistanceWithSeparateClauses dist1 = new EuclideanDistanceWithSeparateClauses(avgDistance, 0d, 1);
 		int numOfNewQueries = 3;
 		//EuclideanDistanceWorkloadGenerator workloadgenerator = new EuclideanDistanceWorkloadGenerator(schemaMap,null, 3);
-		EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(schemaMap, allPossibleSqlQueries, numOfNewQueries);
+		EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(schemaMap, exampleSqlQueries, numOfNewQueries);
 		Clustering_QueryEquality clusteringQueryEquality = new Clustering_QueryEquality();
 		ClusteredWindow window1 = clusteringQueryEquality.cluster(swgo_qlist1);
 		System.out.println(window1);
@@ -293,10 +292,10 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRui
 		String dbName = "dataset19";
 		String logFile = GlobalConfigurations.RO_BASE_PATH + "/DBD-parser/" + "test_log_file_for_dataset19_1.txt";
 		int maxQueriesPerWindow = 1000;
-		List<String> allPossibleQueries = SqlLogFileManager.loadQueryStringsFromPlainFile(logFile, maxQueriesPerWindow);
+		List<String> exampleSqlQueries = SqlLogFileManager.loadQueryStringsFromPlainFile(logFile, maxQueriesPerWindow);
 		System.out.println("Initializing workload generator...");
 		int numOfNewQueries = 3;
-		EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(dbName, VerticaDatabaseLoginConfiguration.class.getSimpleName(), allPossibleQueries, numOfNewQueries);
+		EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi workloadgenerator = new EuclideanDistanceWorkloadGeneratorFromLogFileWithSeparateClausesRuizhi(dbName, VerticaDatabaseLoginConfiguration.class.getSimpleName(), exampleSqlQueries, numOfNewQueries);
 		String windowFile = GlobalConfigurations.RO_BASE_PATH + "/DBD-parser/" + "big_window_for_dataset19.txt";
 		List<String> w1 = SqlLogFileManager.loadQueryStringsFromPlainFile(windowFile, maxQueriesPerWindow);
 		List<Query_SWGO> wq1 = new Query_SWGO.QParser().convertSqlListToQuery(w1, schemaMap);

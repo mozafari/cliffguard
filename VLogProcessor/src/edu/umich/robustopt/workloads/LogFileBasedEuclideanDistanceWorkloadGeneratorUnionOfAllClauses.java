@@ -24,8 +24,8 @@ public abstract class LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllCl
 	protected Set<UnionOption> whichClauses = null;
 	
 	public LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllClauses(Map<String, Schema> schema,
-			ConstantValueManager constManager, List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses, Double penaltyForGoingFromZeroToNonZero) throws Exception {
-		super(schema, constManager, allPossibleSqlQueries, penaltyForGoingFromZeroToNonZero);
+			ConstantValueManager constManager, List<String> exampleSqlQueries, Set<UnionOption> whichClauses, Double penaltyForGoingFromZeroToNonZero) throws Exception {
+		super(schema, constManager, exampleSqlQueries, penaltyForGoingFromZeroToNonZero);
 		if (whichClauses.isEmpty()) {
 			throw new Exception("Should at least has a clause in option");
 		}
@@ -33,13 +33,13 @@ public abstract class LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllCl
 	}
 	
 	public LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllClauses(Map<String, Schema> schema,
-			ConstantValueManager constManager, List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses) throws Exception {
-		this(schema, constManager, allPossibleSqlQueries, whichClauses, 1d);
+			ConstantValueManager constManager, List<String> exampleSqlQueries, Set<UnionOption> whichClauses) throws Exception {
+		this(schema, constManager, exampleSqlQueries, whichClauses, 1d);
 	}
 	
 	public LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllClauses(String dbName, String databaseLoginFile, String DBVendor, 
-			List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses) throws Exception{
-		super(dbName, databaseLoginFile, DBVendor, allPossibleSqlQueries);
+			List<String> exampleSqlQueries, Set<UnionOption> whichClauses) throws Exception{
+		super(dbName, databaseLoginFile, DBVendor, exampleSqlQueries);
 		if (whichClauses.isEmpty()) {
 			throw new Exception("Should at least has a clause in option");
 		}
@@ -47,23 +47,23 @@ public abstract class LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllCl
 	}
 	
 	public LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllClauses(Map<String, Schema> schema, String dbName, 
-			double samplingRate, File f, List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses) throws Exception{
-		super(schema, dbName, samplingRate, f, allPossibleSqlQueries);
+			double samplingRate, File f, List<String> exampleSqlQueries, Set<UnionOption> whichClauses) throws Exception{
+		super(schema, dbName, samplingRate, f, exampleSqlQueries);
 		if (whichClauses.isEmpty()) {
 			throw new Exception("Should at least has a clause in option");
 		}
 		this.whichClauses = whichClauses;
 	}
 	
-	public LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllClauses(Map<String, Schema> schema, List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses) throws Exception {
-		this(schema, null, allPossibleSqlQueries, whichClauses);
+	public LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllClauses(Map<String, Schema> schema, List<String> exampleSqlQueries, Set<UnionOption> whichClauses) throws Exception {
+		this(schema, null, exampleSqlQueries, whichClauses);
 	}
 	
-	public LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllClauses(String dbName, String DBVendor, List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses) throws Exception{
-		this(SchemaUtils.GetSchemaMapFromDefaultSources(dbName, DBVendor).getSchemas(), null, allPossibleSqlQueries, whichClauses);
+	public LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllClauses(String dbName, String DBVendor, List<String> exampleSqlQueries, Set<UnionOption> whichClauses) throws Exception{
+		this(SchemaUtils.GetSchemaMapFromDefaultSources(dbName, DatabaseLoginConfiguration.getDatabaseSpecificLoginName(DBVendor)).getSchemas(), null, exampleSqlQueries, whichClauses);
 	}
 
-	public LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllClauses(String dbName, List<DatabaseLoginConfiguration> dbLogins, List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses) throws Exception{
-		this(SchemaUtils.GetSchemaMap(dbName, dbLogins).getSchemas(), null, allPossibleSqlQueries, whichClauses);
+	public LogFileBasedEuclideanDistanceWorkloadGeneratorUnionOfAllClauses(String dbName, List<DatabaseLoginConfiguration> dbLogins, List<String> exampleSqlQueries, Set<UnionOption> whichClauses) throws Exception{
+		this(SchemaUtils.GetSchemaMap(dbName, dbLogins).getSchemas(), null, exampleSqlQueries, whichClauses);
 	}
 }

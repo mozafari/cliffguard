@@ -19,6 +19,7 @@ Table of Contents:
 ********************************************
 * Installation
 ********************************************
+Attention: Before you install cliffguard, make sure $JAVA_HOME is set.
 
 Untar the package, then:
 

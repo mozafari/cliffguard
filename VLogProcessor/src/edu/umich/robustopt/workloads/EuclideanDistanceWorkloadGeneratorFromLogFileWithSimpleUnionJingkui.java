@@ -37,8 +37,8 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui
 
 	private int numOfNewQueries;
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui(Map<String, Schema> schemaMap, 
-			List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses, int numOfNewQueries) throws Exception {
-		super(schemaMap, allPossibleSqlQueries, whichClauses);
+			List<String> exampleSqlQueries, Set<UnionOption> whichClauses, int numOfNewQueries) throws Exception {
+		super(schemaMap, exampleSqlQueries, whichClauses);
 		if (whichClauses.isEmpty()) {
 			throw new Exception("Should at least has a clause in option");
 		}
@@ -46,8 +46,8 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui
 	}
 	
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui(
-			String dbName, String DBVendor, List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses, int numOfNewQueries) throws Exception {
-		super(dbName, DBVendor, allPossibleSqlQueries, whichClauses);
+			String dbName, String DBVendor, List<String> exampleSqlQueries, Set<UnionOption> whichClauses, int numOfNewQueries) throws Exception {
+		super(dbName, DBVendor, exampleSqlQueries, whichClauses);
 		if (whichClauses.isEmpty()) {
 			throw new Exception("Should at least has a clause in option");
 		}
@@ -55,8 +55,8 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui
 	}
 
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui(
-		String dbName, List<DatabaseLoginConfiguration> dbLogins, List<String> allPossibleSqlQueries, Set<UnionOption> whichClauses, int numOfNewQueries) throws Exception {
-		super(dbName, dbLogins, allPossibleSqlQueries, whichClauses);
+		String dbName, List<DatabaseLoginConfiguration> dbLogins, List<String> exampleSqlQueries, Set<UnionOption> whichClauses, int numOfNewQueries) throws Exception {
+		super(dbName, dbLogins, exampleSqlQueries, whichClauses);
 		if (whichClauses.isEmpty()) {
 			throw new Exception("Should at least has a clause in option");
 		}
@@ -74,7 +74,7 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui
 		if (curWindow == null) {
 			throw new Exception("We cannot forecast the next window from a null window!");
 		}
-		int listSize = allPossibleLogQueries.size();
+		int listSize = exampleSqlQueries.size();
 		if (listSize < numOfNewQueries) {
 			throw new Exception("Number of new queries in next workload can't be larger than "
 					+ "the number of queries in log file" + listSize + " < " + numOfNewQueries);
@@ -91,7 +91,6 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui
 		}
 		
 		// get a far away window
-		Query nonExistingQ = new Query_SWGO();
 		int numOfTrials = 10000;
 		double muchLargerDistanceThanRequested = 0;
 		List<Query> qList = new ArrayList<Query>();
@@ -102,7 +101,7 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionJingkui
 			qList = new ArrayList<Query>();
 			for (int i = 0; i < numOfNewQueries; i++) {
 				int randomC = Randomness.randGen.nextInt(listSize);
-				Query q = allPossibleLogQueries.get(randomC);
+				Query q = exampleSqlQueries.get(randomC);
 				if(!setOfCurWindow.contains(q))
 					qList.add(q);
 				else

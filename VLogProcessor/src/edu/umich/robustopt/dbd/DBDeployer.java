@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-
 import edu.umich.robustopt.common.BLog.LogLevel;
 import edu.umich.robustopt.dblogin.DBInvoker;
 import edu.umich.robustopt.dblogin.DatabaseInstance;
@@ -38,6 +37,7 @@ public abstract class DBDeployer extends DBInvoker implements DatabaseInstance {
 	private QueryPlanParser queryPlanParser = null;
 	
 	// book keeping
+	private static HashMap<PhysicalStructure, String> deployCommandsMap = new HashMap<PhysicalStructure, String>();
 	private static transient double secondsSpentRetrievingDiskSize = 0;
 	private static transient long numberOfStructuresDeployed = 0;
 	private transient long secondsSpentInitializing = 0;
@@ -99,6 +99,14 @@ public abstract class DBDeployer extends DBInvoker implements DatabaseInstance {
 		return success;				
 	}
 	
+	public void dropAllStructuresExcept(Set<PhysicalStructure> physicalStructuresToExclude) throws Exception{
+		Set<DeployedPhysicalStructure> deployedPhysicalStructures = new HashSet<DeployedPhysicalStructure>(getCurrentlyDeployedStructures());
+		for (DeployedPhysicalStructure p : deployedPhysicalStructures) {
+			if (!physicalStructuresToExclude.contains(p.getStructure()))
+				dropPhysicalStructureIfExists(dbConnection, p.getSchema(), p.getBasename());
+		}
+	}
+
 	// return true upon success
 	public boolean dropPhysicalStructureIfExists(Connection conn, String schemaName, String structureName) {
 		boolean found = false;
@@ -368,6 +376,15 @@ public abstract class DBDeployer extends DBInvoker implements DatabaseInstance {
 			log.error("The requested structure is not currently deployed, cannot determined its size!");
 			return null;
 		}
+	}
+
+	public static void setDeployCommands(PhysicalStructure physicalStructure, String deployCommands) {
+		deployCommandsMap.put(physicalStructure, deployCommands);
+	}
+	
+	public static String getDeployCommands(PhysicalStructure physicalStructure) {
+		String deployCommands = deployCommandsMap.get(physicalStructure);
+		return deployCommands == null ? "" : deployCommands;
 	}
 	
 	public Double retrieveStructureDiskSizeInGigabytes(DeployedPhysicalStructure deployedStruct) throws SQLException {

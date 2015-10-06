@@ -40,9 +40,9 @@ public class EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile
 	private boolean useExplainInsteadOfRunningQueries;
 
 
-	public EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile(String dbName, String DBVendor, List<String> allPossibleSqlQueries,
+	public EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile(String dbName, String DBVendor, List<String> exampleSqlQueries,
 			Set<UnionOption> whichClauses, int numOfNewQueries, LatencyMeter latencyMeter, Double latencyPenaltyFactor, boolean useExplainInsteadOfRunningQueries) throws Exception {
-		super(dbName, DBVendor, allPossibleSqlQueries, whichClauses);
+		super(dbName, DBVendor, exampleSqlQueries, whichClauses);
 		this.numOfNewQueries = numOfNewQueries;
 		this.latencyMeter = latencyMeter;
 		this.latencyPenaltyFactor = latencyPenaltyFactor;
@@ -109,7 +109,7 @@ public class EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile
 		}
 		penaltyForGoingFromZeroToNonZero = distance.getPenaltyForGoingFromZeroToNonZero();
 		
-		int listSize = allPossibleLogQueries.size();
+		int listSize = exampleSqlQueries.size();
 		
 		double dist = targetDistance.getDistance();
 		int originalWindowSize = originalWindow.totalNumberOfQueries();
@@ -140,7 +140,7 @@ public class EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile
 		List<PhysicalStructure> emptyDesign = new ArrayList<PhysicalStructure>();
 		
 		// Set of q in T\W1
-		for (Query q : allPossibleLogQueries){
+		for (Query q : exampleSqlQueries){
 			assert(!(q instanceof Query_SWGO));
 			if (!latencys.containsKey(q)) {
 				String query = q.getSql();
@@ -257,7 +257,7 @@ public class EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile
 		List<Query_SWGO> wq1 = new Query_SWGO.QParser().convertSqlListToQuery(w1, schemaMap);
 		List<Query> qlist1 = Query.convertToListOfQuery(wq1);
 		int maxQueriesPerWindow = 100;
-		List<String> allPossibleQueries = SqlLogFileManager.loadQueryStringsFromPlainFile(logFile, maxQueriesPerWindow);
+		List<String> exampleQueries = SqlLogFileManager.loadQueryStringsFromPlainFile(logFile, maxQueriesPerWindow);
 		Set<UnionOption> option = new HashSet<UnionOption> (){{  
 	           add(UnionOption.SELECT);  
 	           add(UnionOption.WHERE);  
@@ -270,7 +270,7 @@ public class EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile
 		int numOfNewQueries = 2;
 		String topDir = GlobalConfigurations.RO_BASE_PATH + "/processed_workloads/real/dataset19/dvals/";
 		LatencyMeter latencyMeter = createLatencyMeterForUnitTesting();
-		EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile workloadgenerator = new EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile("dataset19", VerticaDatabaseLoginConfiguration.class.getSimpleName(), allPossibleQueries, option, numOfNewQueries, latencyMeter, 0.1, false);
+		EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile workloadgenerator = new EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile("dataset19", VerticaDatabaseLoginConfiguration.class.getSimpleName(), exampleQueries, option, numOfNewQueries, latencyMeter, 0.1, false);
 		Clustering_QueryEquality clusteringQueryEquality = new Clustering_QueryEquality();
 		ClusteredWindow window1 = clusteringQueryEquality.cluster(qlist1);
 		System.out.println(window1);
@@ -309,10 +309,10 @@ public class EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile
 		LatencyMeter latencyMeter = null;
 		DBDesigner dbDesigner = null;
 		SqlLogFileManager<Query_SWGO> sqlLogFileManager = new SqlLogFileManager<Query_SWGO>('|', "\n", new Query_SWGO.QParser(), schemaMap, latencyMeter, true, dbDesigner);
-		List<Query_SWGO> allPossibleQueries = sqlLogFileManager.loadTimestampQueriesFromFile(unionSqlQueriesFile);
-		List<String> allPossibleSqlQueries = new ArrayList<String>();
-		for (Query_SWGO q : allPossibleQueries)
-			allPossibleSqlQueries.add(q.getSql());
+		List<Query_SWGO> exampleQueries = sqlLogFileManager.loadTimestampQueriesFromFile(unionSqlQueriesFile);
+		List<String> exampleSqlQueries = new ArrayList<String>();
+		for (Query_SWGO q : exampleQueries)
+			exampleSqlQueries.add(q.getSql());
 		
 		List<String> wq1 = sqlLogFileManager.loadQueryStringsFromPlainFile(windowFile, 10000);
 		List<Query_SWGO> swgo_qlist1 = new Query_SWGO.QParser().convertSqlListToQuery(wq1, schemaMap);
@@ -325,7 +325,7 @@ public class EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile
 		int numOfNewQueries = 3;
 		LatencyMeter realLatencyMeter = createLatencyMeterForUnitTesting();
 		//EuclideanDistanceWorkloadGenerator workloadgenerator = new EuclideanDistanceWorkloadGenerator(schemaMap,null, 3);
-		EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile workloadgenerator = new EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile("dataset19", VerticaDatabaseLoginConfiguration.class.getSimpleName(), allPossibleSqlQueries, option, numOfNewQueries, realLatencyMeter, 0.1d, false);
+		EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile workloadgenerator = new EuclideanDistanceWithLatencyWorkloadGeneratorFromLogFile("dataset19", VerticaDatabaseLoginConfiguration.class.getSimpleName(), exampleSqlQueries, option, numOfNewQueries, realLatencyMeter, 0.1d, false);
 		Clustering_QueryEquality clusteringQueryEquality = new Clustering_QueryEquality();
 		ClusteredWindow window1 = clusteringQueryEquality.cluster(swgo_qlist1);
 		System.out.println(window1);

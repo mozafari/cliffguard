@@ -26,15 +26,6 @@ public class Query_SWGO extends Query {
 	private Set<ColumnDescriptor> where = null;
 	private List<ColumnDescriptor> group_by = null;
 	private List<ColumnDescriptor> order_by = null;
-	
-	public Query_SWGO() {
-		super(null);
-		select = new HashSet<ColumnDescriptor>();
-		from = new HashSet<ColumnDescriptor>();
-		where = new HashSet<ColumnDescriptor>();
-		group_by = new ArrayList<ColumnDescriptor>();
-		order_by = new ArrayList<ColumnDescriptor>();
-	}
 
 	//TODO: We use collection, since sometime we pass in a List and sometimes a Set! We should break this into two constructors
 	public Query_SWGO (Collection<ColumnDescriptor> selectColumns,

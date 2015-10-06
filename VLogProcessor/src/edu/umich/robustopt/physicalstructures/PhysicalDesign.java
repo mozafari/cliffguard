@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import edu.umich.robustopt.dbd.DBDeployer;
+
 
 public class PhysicalDesign implements Serializable {
 	private static final long serialVersionUID = -1836780146428511820L;
@@ -72,29 +74,40 @@ public class PhysicalDesign implements Serializable {
 		return true;
 	}
 
-	private boolean generateDeploymentScript(PrintStream ps) {
-		System.err.println("This method needs to be implemented first");
-		return true;		
-	}
-
-	public boolean generateDeploymentScript(String outputScriptFilename) {
+	public void generateDeploymentScript(String outputScriptFilename) {
 		PrintStream ps;
 		try {
 			ps = new PrintStream(outputScriptFilename);
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return false;
+			ps = System.out;
+			System.err.println("CliffGuard could not write the deployment script to the specified output file '"+ outputScriptFilename
+					+"'. Thus, the script is going to be printed to the terminal\n\n");
 		}
-		return generateDeploymentScript(ps);
-	}
-
-	
-	public boolean generateDeploymentScript() {
-		return generateDeploymentScript(System.out);
+		for (PhysicalStructure p : physicalStructures)
+			if (!DBDeployer.getDeployCommands(p).equals(""))
+				ps.println(DBDeployer.getDeployCommands(p));
+		ps.close();
 	}
 	
-
-	
-	
+	public void generateSuggestedDesignScript(String outputScriptFilename) throws Exception {
+		PrintStream ps;
+		try {
+			ps = new PrintStream(outputScriptFilename);
+		} catch (FileNotFoundException e) {
+			ps = System.out;
+			System.err.println("CliffGuard could not write the suggested design script to the specified output file '"+ outputScriptFilename
+					+"'. Thus, the script is going to be printed to the terminal");
+		}
+		
+		// Print Script 
+		String structureName = "cliffguard_structure_";
+		int i = 0;
+		for (PhysicalStructure p : physicalStructures) {
+			ArrayList<String> createPhysicalStructureSql = p.createPhysicalStructureSQL(structureName + i++);
+			for (String sql : createPhysicalStructureSql) {
+				ps.println(sql + '\n');
+			}
+		}
+		ps.close();
+	}
 }

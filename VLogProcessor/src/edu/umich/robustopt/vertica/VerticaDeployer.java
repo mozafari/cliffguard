@@ -24,6 +24,7 @@ import com.vertica.jdbc.VerticaStatement;
 
 import edu.umich.robustopt.common.BLog;
 import edu.umich.robustopt.common.BLog.LogLevel;
+import edu.umich.robustopt.common.RecordedStatement;
 import edu.umich.robustopt.dbd.DBDeployer;
 import edu.umich.robustopt.dblogin.DBInvoker;
 import edu.umich.robustopt.dblogin.DatabaseInstance;
@@ -176,16 +177,16 @@ public class VerticaDeployer extends DBDeployer {
 		try {
 			Timer t = new Timer();
 
-			Statement stmt = dbConnection.createStatement();
+			RecordedStatement rstmt = new RecordedStatement(dbConnection.createStatement());
 			ResultSet res;
 			int rc;
 			
 			Timer outerT = new Timer();
 			
-			stmt.execute("CREATE SCHEMA IF NOT EXISTS " + OUR_PROJECTION_SCHEMA);
+			rstmt.execute("CREATE SCHEMA IF NOT EXISTS " + OUR_PROJECTION_SCHEMA, true);
 			try {
 				// sigh, no CREATE SEQUENCE IF NOT EXISTS 
-				stmt.execute("CREATE SEQUENCE " + OUR_PROJECTION_SCHEMA + "." + OUR_PROJECTION_NAME_SEQ);
+				rstmt.execute("CREATE SEQUENCE " + OUR_PROJECTION_SCHEMA + "." + OUR_PROJECTION_NAME_SEQ, true);
 			} catch (SQLException e) {
 				// silently fails if exists (which is what we want)
 			}
@@ -195,16 +196,17 @@ public class VerticaDeployer extends DBDeployer {
 			size_gb = null;
 			try {				
 				// get new name
-				res = stmt.executeQuery("SELECT NEXTVAL('" + OUR_PROJECTION_SCHEMA + "." + OUR_PROJECTION_NAME_SEQ + "')");
+				res = rstmt.executeQuery("SELECT NEXTVAL('" + OUR_PROJECTION_SCHEMA + "." + OUR_PROJECTION_NAME_SEQ + "')", false);
 				if (!res.next())
 					throw new SQLException("Could not get next val in name seq");
 				int nextVal = res.getInt(1);
 				res.close();
 				
-				String sql = vproj.createProjectionSql(OUR_PROJECTION_SCHEMA, "proj_" + nextVal);
-				rc = stmt.executeUpdate(sql);
-				stmt.execute("select refresh('" + vproj.getProjection_anchor_table().getQualifiedName()+ "');");				
-				stmt.execute("select make_ahm_now();");
+				String sql = vproj.createPhysicalStructureSQL(OUR_PROJECTION_SCHEMA + "." + "proj_" + nextVal).get(0);
+				rc = rstmt.executeUpdate(sql, true);
+				rstmt.execute("select refresh('" + vproj.getProjection_anchor_table().getQualifiedName()+ "');", true);				
+				rstmt.execute("select make_ahm_now();", true);
+				rstmt.finishDeploy(structure);
 				
 				size_gb = retrieveStructureDiskSizeInGigabytes(OUR_PROJECTION_SCHEMA, "proj_" + nextVal);
 				res.close();

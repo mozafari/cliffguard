@@ -68,8 +68,7 @@ public class CliffGuard {
 			String cliffGuard_config_file, String cliffGuard_setting_id,
 			Double distanceValue, 
 			List<String> windowQueries, String localPathToStatsFile, 
-			String cacheFilename, String outputScriptFilename) throws Exception {				
-		
+			String cacheFilename, String outputDesignScript, Boolean shouldDeploy, String outputDeploymentScript) throws Exception {				
 		String dbName;
 		if (!emptyDB.getDBname().equals(fullDB.getDBname())) {
 			throw new Exception("The two given servers are hosting different databases:" + emptyDB.getDBname() + " versus " + fullDB.getDBname());
@@ -156,18 +155,25 @@ public class CliffGuard {
 		
 		Timer t = new Timer();
 		PhysicalDesign design = nonConvexDesigner.design(windowQueryPerformance, distributionDistance);
+		
+		// generate script files and clean up unneeded structures
+		design.generateSuggestedDesignScript(outputDesignScript);
+		if (shouldDeploy) {
+			dbDeployer.dropAllStructuresExcept(design.getPhysicalStructures());
+		}
+		else {
+			dbDeployer.dropAllStructures();
+			design.generateDeploymentScript(outputDeploymentScript);
+		}
+		
+		// print summary
 		log.status(LogLevel.STATUS, "finished designing in " + t.lapMinutes() + " minutes, using the following parameters for CliffGuard and distance=" + distanceValue + " : \n" + nonConvexDesigner.summarizeParameters());
 		experimentCache.saveTheEntireCache(); 
 		dbDesigner.closeConnection();
 		dbDeployer.closeConnection();
-		boolean success = design.generateDeploymentScript(outputScriptFilename);
-		if (!success) {
-			log.error("CliffGuard could not write the deployment script to the specified output file '"+ outputScriptFilename
-					+"'. Thus, the script is going to be printed to the terminal, as follows:\n\n");
-			design.generateDeploymentScript(); // write to the console
-		}
 		printStatistics(dbDesigner, dbDeployer, latencyMeter, experimentCache);
-		log.status(LogLevel.STATUS, "Finished the design. The output is stored in " + outputScriptFilename  + "\n============================================================\n\n");
+		log.status(LogLevel.STATUS, "Finished the design. The Suggested Design Script is stored in " + outputDesignScript  +  (shouldDeploy ? "" : ". The Deployment Script is stored in "
+				+ outputDeploymentScript) + "\n============================================================\n\n");
 		return experimentCache.getNewFileName();
 	}	
 
@@ -740,8 +746,9 @@ public class CliffGuard {
 		String cacheDir;
 		String localPathToStatsFile;
 		Double distanceValue = 0.0d;
+		String output_suggested_design_script_filename;
+		Boolean shouldDeploy;
 		String output_deployment_script_filename;
-		
 		
 		String usageMessage = "Usage: " 
 				+ "db_vendor "
@@ -754,102 +761,120 @@ public class CliffGuard {
 				+ "cache_directory "
 				+ "localPathToStatsFile "
 				+ "distanceValue(>=0 & <=1) "
-				+ "output_deployment_script_filename\n";
+				+ "output_suggested_design_script_filename "
+				+ "shouldDeploy(t/f)\n "
+				+ "[output_deployment_script_filename]";
+				
 		
-		if (args.length != 11) {
+		if (args.length < 12 || args.length > 13) {
 			log.error(usageMessage);
 			return;
 		}
-		String homeDir = System.getProperty("user.home");
-		int idx = 0;
-		// we have the right number of parameters
-		db_vendor = args[idx++]; db_vendor = db_vendor.toLowerCase();
-		assert db_vendor.equals("vertica") || db_vendor.equals("microsoft");
-		
-		database_login_file = args[idx++];
-		if (database_login_file.startsWith("~/"))
-			database_login_file = homeDir + File.separator + database_login_file.substring(2);
-		
-		deployer_db_alias = args[idx++];
-		
-		designer_db_alias = args[idx++];
-		assert !deployer_db_alias.equals(designer_db_alias);
-		
-		cliffGuard_config_file = args[idx++];
-		cliffGuard_setting_id = args[idx++];
-		timestampedInputQueryFile = args[idx++];
-		
-		cacheDir = args[idx++];
-		if (cacheDir.startsWith("~/"))
-			cacheDir = homeDir + File.separator + cacheDir.substring(2);
-
-		localPathToStatsFile = args[idx++]; 
-		
-		distanceValue = Double.parseDouble(args[idx++]);
-		
-		output_deployment_script_filename = args[idx++];
+		try {
+			String homeDir = System.getProperty("user.home");
+			int idx = 0;
+			// we have the right number of parameters
+			db_vendor = args[idx++]; db_vendor = db_vendor.toLowerCase();
+			assert db_vendor.equals("vertica") || db_vendor.equals("microsoft");
 			
-		log.status(LogLevel.STATUS, "Running with the following parameters:\n"
-				+ "\ndb_vendor=" + db_vendor
-				+ "\ndatabase_login_file=" + database_login_file
-				+ "\ndeployer_db_alias=" + deployer_db_alias
-				+ "\ndesigner_db_alias=" + designer_db_alias
-				+ "\ncliffGuard_config_file=" + cliffGuard_config_file
-				+ "\ncliffGuard_setting_id=" + cliffGuard_setting_id
-				+ "\ntimestampedInputQueryFile=" + timestampedInputQueryFile
-				+ "\ncache_directory=" + cacheDir
-				+ "\nlocalPathToStatsFile=" + localPathToStatsFile
-				+ "\ndistanceValue=" + distanceValue
-				+ "\noutput_deployment_script_filename=" + output_deployment_script_filename
-				+ "\n\n"
-				);
+			database_login_file = args[idx++];
+			if (database_login_file.startsWith("~/"))
+				database_login_file = homeDir + File.separator + database_login_file.substring(2);
+			
+			deployer_db_alias = args[idx++];
+			
+			designer_db_alias = args[idx++];
+			assert !deployer_db_alias.equals(designer_db_alias);
+			
+			cliffGuard_config_file = args[idx++];
+			cliffGuard_setting_id = args[idx++];
+			timestampedInputQueryFile = args[idx++];
+			
+			cacheDir = args[idx++];
+			if (cacheDir.startsWith("~/"))
+				cacheDir = homeDir + File.separator + cacheDir.substring(2);
 	
-		String DBVendor;
-		List<DatabaseLoginConfiguration> allDatabaseConfigurations;
-		if (db_vendor.equalsIgnoreCase("microsoft")) {
-			allDatabaseConfigurations = DatabaseLoginConfiguration.loadDatabaseConfigurations(database_login_file, MicrosoftDatabaseLoginConfiguration.class.getSimpleName());
-			DBVendor = MicrosoftDatabaseLoginConfiguration.class.getSimpleName();
-		} else if (db_vendor.equalsIgnoreCase("vertica")) {
-			allDatabaseConfigurations = DatabaseLoginConfiguration.loadDatabaseConfigurations(database_login_file, VerticaDatabaseLoginConfiguration.class.getSimpleName());
-			DBVendor = VerticaDatabaseLoginConfiguration.class.getSimpleName();
-		} else
-			throw new Exception("Unsupported vendor: " + db_vendor);
-
-		DatabaseLoginConfiguration deployerConfig = DatabaseLoginConfiguration.findDBAliasInList(deployer_db_alias, allDatabaseConfigurations);
-		DatabaseLoginConfiguration designerConfig = DatabaseLoginConfiguration.findDBAliasInList(designer_db_alias, allDatabaseConfigurations);
-		if (deployerConfig==null || designerConfig==null || deployerConfig.getDBname()!=designerConfig.getDBname())
-			throw new Exception("Your aliases either do not exist or refer to databases of different names!");
-		
-		QueryParser queryParser = new Query_SWGO.QParser();
-		//TODO: In this version, we do not check whetehr the two DB aliases have the same schema or not... We need to add this feature in the future.
-		Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMap(deployer_db_alias, allDatabaseConfigurations).getSchemas();
-		
-		SqlLogFileManager<Query_SWGO> sqlLogFileManager = new SqlLogFileManager<Query_SWGO>('|', "\n", queryParser, schemaMap);
-		List<String> allQueryStrings = sqlLogFileManager.loadTimestampQueryStringsFromFile(timestampedInputQueryFile);
-		System.out.println("# of Queries that will be used in our design = " + allQueryStrings.size() + " out of which # of uniques are "
-				+ new HashSet(allQueryStrings).size());
-		
-		
-		//NonConvexDesigner nonConvexDesigner = NonConvexDesigner.loadNonConvexDesignerFromFile(cliffGuard_config_file);
-
-		
-		String cacheFilename = cacheDir + File.separator + "experiment.cache";
-		String newCacheFileName = null;
-		
-		newCacheFileName = performDesign(designerConfig, deployerConfig, cliffGuard_config_file, cliffGuard_setting_id, distanceValue, allQueryStrings, localPathToStatsFile, cacheFilename, output_deployment_script_filename); 
-
-		
-		Timer t = new Timer();
-		ExperimentCache experimentCache = ExperimentCache.loadCacheFromFile(newCacheFileName);
-		System.out.println("Loading experiement cache took " + t.lapSeconds() + " secs");
-		t = new Timer();
-		experimentCache.saveTheEntireCache(cacheDir + File.separator + "experiment.cache");
-		System.out.println("Copying experiement cache took " + t.lapSeconds() + " secs");
-		
+			localPathToStatsFile = args[idx++]; 
+			
+			distanceValue = Double.parseDouble(args[idx++]);
+			
+			output_suggested_design_script_filename = args[idx++];
+	
+			shouldDeploy = args[idx++].equals("t") ? true : false;
+			
+			output_deployment_script_filename = args.length >= 13 ? args[idx++] : "";
+			
+			if (!shouldDeploy && output_deployment_script_filename.isEmpty()) {
+				log.error("shouldDeploy is set to false. You need to specify output_deployment_script_filename");
+				return;
+			}
 				
+			log.status(LogLevel.STATUS, "Running with the following parameters:\n"
+					+ "\ndb_vendor=" + db_vendor
+					+ "\ndatabase_login_file=" + database_login_file
+					+ "\ndeployer_db_alias=" + deployer_db_alias
+					+ "\ndesigner_db_alias=" + designer_db_alias
+					+ "\ncliffGuard_config_file=" + cliffGuard_config_file
+					+ "\ncliffGuard_setting_id=" + cliffGuard_setting_id
+					+ "\ntimestampedInputQueryFile=" + timestampedInputQueryFile
+					+ "\ncache_directory=" + cacheDir
+					+ "\nlocalPathToStatsFile=" + localPathToStatsFile
+					+ "\ndistanceValue=" + distanceValue
+					+ "\noutput_suggested_design_script_filename=" + output_suggested_design_script_filename
+					+ "\nshouldDeploy=" + shouldDeploy
+					+ "\noutput_deployment_script_filename=" + output_deployment_script_filename
+					+ "\n\n"
+					);
 		
-		log.status(LogLevel.STATUS, "CliffGuard is now done.");
-		
+			String DBVendor;
+			List<DatabaseLoginConfiguration> allDatabaseConfigurations;
+			if (db_vendor.equalsIgnoreCase("microsoft")) {
+				allDatabaseConfigurations = DatabaseLoginConfiguration.loadDatabaseConfigurations(database_login_file, MicrosoftDatabaseLoginConfiguration.class.getSimpleName());
+				DBVendor = MicrosoftDatabaseLoginConfiguration.class.getSimpleName();
+			} else if (db_vendor.equalsIgnoreCase("vertica")) {
+				allDatabaseConfigurations = DatabaseLoginConfiguration.loadDatabaseConfigurations(database_login_file, VerticaDatabaseLoginConfiguration.class.getSimpleName());
+				DBVendor = VerticaDatabaseLoginConfiguration.class.getSimpleName();
+			} else
+				throw new Exception("Unsupported vendor: " + db_vendor);
+	
+			DatabaseLoginConfiguration deployerConfig = DatabaseLoginConfiguration.findDBAliasInList(deployer_db_alias, allDatabaseConfigurations);
+			DatabaseLoginConfiguration designerConfig = DatabaseLoginConfiguration.findDBAliasInList(designer_db_alias, allDatabaseConfigurations);
+			if (deployerConfig==null || designerConfig==null || !deployerConfig.getDBname().equals(designerConfig.getDBname()))
+				throw new Exception("Your aliases either do not exist or refer to databases of different names!");
+			
+			QueryParser queryParser = new Query_SWGO.QParser();
+			//TODO: In this version, we do not check whetehr the two DB aliases have the same schema or not... We need to add this feature in the future.
+			Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMap(deployer_db_alias, allDatabaseConfigurations).getSchemas();
+			
+			SqlLogFileManager<Query_SWGO> sqlLogFileManager = new SqlLogFileManager<Query_SWGO>('|', "\n", queryParser, schemaMap);
+			List<String> allQueryStrings = sqlLogFileManager.loadTimestampQueryStringsFromFile(timestampedInputQueryFile);
+			System.out.println("# of Queries that will be used in our design = " + allQueryStrings.size() + " out of which # of uniques are "
+					+ new HashSet(allQueryStrings).size());
+			
+			
+			//NonConvexDesigner nonConvexDesigner = NonConvexDesigner.loadNonConvexDesignerFromFile(cliffGuard_config_file);
+	
+			
+			String cacheFilename = cacheDir + File.separator + "experiment.cache";
+			String newCacheFileName = null;
+			
+			newCacheFileName = performDesign(designerConfig, deployerConfig, cliffGuard_config_file, cliffGuard_setting_id, distanceValue, allQueryStrings, localPathToStatsFile, cacheFilename, output_suggested_design_script_filename, shouldDeploy, output_deployment_script_filename); 
+	
+			
+			Timer t = new Timer();
+			ExperimentCache experimentCache = ExperimentCache.loadCacheFromFile(newCacheFileName);
+			System.out.println("Loading experiement cache took " + t.lapSeconds() + " secs");
+			t = new Timer();
+			experimentCache.saveTheEntireCache(cacheDir + File.separator + "experiment.cache");
+			System.out.println("Copying experiement cache took " + t.lapSeconds() + " secs");
+			
+					
+			
+			log.status(LogLevel.STATUS, "CliffGuard is now done.");
+		} catch (Exception e) {
+			log.error(e.toString());
+			e.printStackTrace();
+		}
 	}
 
 }

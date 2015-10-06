@@ -20,19 +20,19 @@ import edu.umich.robustopt.util.SchemaUtils;
 
 public abstract class LogFileBasedEuclideanDistanceWorkloadGenerator extends Query_SWGO_WorkloadGenerator<EuclideanDistance> {
 	protected Double penaltyForGoingFromZeroToNonZero = 1d;
-	protected List<Query> allPossibleLogQueries = null;
+	protected List<Query> exampleSqlQueries = null;
 	protected Map<Cluster, Cluster> clusterMap = null;
 	
 	public LogFileBasedEuclideanDistanceWorkloadGenerator(Map<String, Schema> schema,
-			ConstantValueManager constManager, List<String> allPossibleSqlQueries, Double penaltyForGoingFromZeroToNonZero) throws Exception {
+			ConstantValueManager constManager, List<String> exampleSqlQueries, Double penaltyForGoingFromZeroToNonZero) throws Exception {
 		super(schema, constManager);
-		if (allPossibleSqlQueries == null) {
+		if (exampleSqlQueries == null) {
 			throw new Exception("The list of queries should not be null");
-		} else if (allPossibleSqlQueries.size() == 0) {
+		} else if (exampleSqlQueries.size() == 0) {
 			throw new Exception("The list of queries should not be empty");
 		}
-		List<Query_SWGO> allPossibleLogQueries_SWGO = getQueryParser().convertSqlListToQuery(allPossibleSqlQueries, schema);
-		List<Query> logQueries = Query.convertToListOfQuery(allPossibleLogQueries_SWGO);
+		List<Query_SWGO> exampleQueries_SWGO = getQueryParser().convertSqlListToQuery(exampleSqlQueries, schema);
+		List<Query> logQueries = Query.convertToListOfQuery(exampleQueries_SWGO);
 		Set<Query> uniqueQueries = new HashSet<Query>();
 		for (Query q : logQueries) {
 			if (uniqueQueries.contains(q)) {
@@ -42,25 +42,25 @@ public abstract class LogFileBasedEuclideanDistanceWorkloadGenerator extends Que
 			}
 		}
 		System.out.println("Created a LogFileBasedEuclideanDistanceWorkloadGenerator with " + uniqueQueries.size() + " unique queries.");
-		this.allPossibleLogQueries = new ArrayList<Query>(uniqueQueries);
+		this.exampleSqlQueries = new ArrayList<Query>(uniqueQueries);
 		this.penaltyForGoingFromZeroToNonZero = penaltyForGoingFromZeroToNonZero;
 	}
 	
 	public LogFileBasedEuclideanDistanceWorkloadGenerator(Map<String, Schema> schema,
-			ConstantValueManager constManager, List<String> allPossibleSqlQueries) throws Exception {
-		this(schema, constManager, allPossibleSqlQueries, 1d);
+			ConstantValueManager constManager, List<String> exampleSqlQueries) throws Exception {
+		this(schema, constManager, exampleSqlQueries, 1d);
 	}
 	
 	public LogFileBasedEuclideanDistanceWorkloadGenerator(String dbName, String databaseLoginFile, String DBVendor, 
-			List<String> allPossibleSqlQueries) throws Exception{
+			List<String> exampleSqlQueries) throws Exception{
 		super(dbName, databaseLoginFile, DBVendor);
-		if (allPossibleSqlQueries == null) {
+		if (exampleSqlQueries == null) {
 			throw new Exception("The list of queries should not be null");
-		} else if (allPossibleSqlQueries.size() == 0) {
+		} else if (exampleSqlQueries.size() == 0) {
 			throw new Exception("The list of queries should not be empty");
 		}
-		List<Query_SWGO> allPossibleLogQueries_SWGO = getQueryParser().convertSqlListToQuery(allPossibleSqlQueries, schema);
-		List<Query> logQueries = Query.convertToListOfQuery(allPossibleLogQueries_SWGO);
+		List<Query_SWGO> exampleSqlQueries_SWGO = getQueryParser().convertSqlListToQuery(exampleSqlQueries, schema);
+		List<Query> logQueries = Query.convertToListOfQuery(exampleSqlQueries_SWGO);
 		Set<Query> uniqueQueries = new HashSet<Query>();
 		for (Query q : logQueries) {
 			if (uniqueQueries.contains(q)) {
@@ -69,19 +69,19 @@ public abstract class LogFileBasedEuclideanDistanceWorkloadGenerator extends Que
 				uniqueQueries.add(q);
 			}
 		}
-		this.allPossibleLogQueries = new ArrayList<Query>(uniqueQueries);
+		this.exampleSqlQueries = new ArrayList<Query>(uniqueQueries);
 	}
 	
 	public LogFileBasedEuclideanDistanceWorkloadGenerator(Map<String, Schema> schema, String dbName, 
-			double samplingRate, File f, List<String> allPossibleSqlQueries) throws Exception{
+			double samplingRate, File f, List<String> exampleSqlQueries) throws Exception{
 		super(schema, dbName, samplingRate, f);
-		if (allPossibleSqlQueries == null) {
+		if (exampleSqlQueries == null) {
 			throw new Exception("The list of queries should not be null");
-		} else if (allPossibleSqlQueries.size() == 0) {
+		} else if (exampleSqlQueries.size() == 0) {
 			throw new Exception("The list of queries should not be empty");
 		}
-		List<Query_SWGO> allPossibleLogQueries_SWGO = getQueryParser().convertSqlListToQuery(allPossibleSqlQueries, schema);
-		List<Query> logQueries = Query.convertToListOfQuery(allPossibleLogQueries_SWGO);
+		List<Query_SWGO> exampleQueries_SWGO = getQueryParser().convertSqlListToQuery(exampleSqlQueries, schema);
+		List<Query> logQueries = Query.convertToListOfQuery(exampleQueries_SWGO);
 		Set<Query> uniqueQueries = new HashSet<Query>();
 		for (Query q : logQueries) {
 			if (uniqueQueries.contains(q)) {
@@ -90,46 +90,41 @@ public abstract class LogFileBasedEuclideanDistanceWorkloadGenerator extends Que
 				uniqueQueries.add(q);
 			}
 		}
-		this.allPossibleLogQueries = new ArrayList<Query>(uniqueQueries);
+		this.exampleSqlQueries = new ArrayList<Query>(uniqueQueries);
 	}
 	
-	public LogFileBasedEuclideanDistanceWorkloadGenerator(Map<String, Schema> schema, List<String> allPossibleSqlQueries) throws Exception {
-		this(schema, null, allPossibleSqlQueries);
+	public LogFileBasedEuclideanDistanceWorkloadGenerator(Map<String, Schema> schema, List<String> exampleSqlQueries) throws Exception {
+		this(schema, null, exampleSqlQueries);
 	}
 	
-	public LogFileBasedEuclideanDistanceWorkloadGenerator(String dbName, String DBVendor, List<String> allPossibleSqlQueries) throws Exception{
-		this(SchemaUtils.GetSchemaMapFromDefaultSources(dbName, DBVendor).getSchemas(), null, allPossibleSqlQueries);
+	public LogFileBasedEuclideanDistanceWorkloadGenerator(String dbName, String DBVendor, List<String> exampleSqlQueries) throws Exception{
+		this(SchemaUtils.GetSchemaMapFromDefaultSources(dbName, DatabaseLoginConfiguration.getDatabaseSpecificLoginName(DBVendor)).getSchemas(), null, exampleSqlQueries);
 	}
 
-	public LogFileBasedEuclideanDistanceWorkloadGenerator(String dbName, List<DatabaseLoginConfiguration> dbLogins, List<String> allPossibleSqlQueries) throws Exception{
-		this(SchemaUtils.GetSchemaMap(dbName, dbLogins).getSchemas(), null, allPossibleSqlQueries);
+	public LogFileBasedEuclideanDistanceWorkloadGenerator(String dbName, List<DatabaseLoginConfiguration> dbLogins, List<String> exampleSqlQueries) throws Exception{
+		this(SchemaUtils.GetSchemaMap(dbName, dbLogins).getSchemas(), null, exampleSqlQueries);
 	}
 		
 	@Override
 	public Cluster createClusterWithNewFrequency(Cluster cluster, int newFreq) throws Exception {
 		if (clusterMap == null) {
 			Clustering_QueryEquality clusteringQueryEquality = new Clustering_QueryEquality();
-			ClusteredWindow clusterdWindow = clusteringQueryEquality.cluster(allPossibleLogQueries);
+			ClusteredWindow clusterdWindow = clusteringQueryEquality.cluster(exampleSqlQueries);
 			this.clusterMap = new HashMap<Cluster, Cluster>();
 			for(Cluster c : clusterdWindow.getClusters() ){
 				clusterMap.put(c, c);
 			}
 		}
-		if(clusterMap.containsKey(cluster)){
-			Cluster logCluster = clusterMap.get(cluster);
-			if(newFreq <= logCluster.getFrequency()){
-				return new Cluster(logCluster.getQueries().subList(0, newFreq));
-			} else {
-				List<Query> retClusterList = new ArrayList(logCluster.getQueries()); 
-				int nToAdd = newFreq - logCluster.getFrequency();
-				for(int i = 0; i < nToAdd; ++i){
-					retClusterList.add(logCluster.retrieveAQueryAtRandom());
-				}
-				return new Cluster(retClusterList);
-			}
+		if(newFreq <= cluster.getFrequency()){
+			return new Cluster(cluster.getQueries().subList(0, newFreq));
 		} else {
-			return null;
+			List<Query> retClusterList = new ArrayList(cluster.getQueries()); 
+			int nToAdd = newFreq - cluster.getFrequency();
+			Cluster logCluster = clusterMap.get(cluster);
+			// If clusterMap contains cluster, we get queries from clusterMap. Otherwise, we randomly duplicate existing queries. 
+			for(int i = 0; i < nToAdd; ++i) 
+				retClusterList.add(clusterMap.containsKey(cluster) ? logCluster.retrieveAQueryAtRandom() : cluster.retrieveAQueryAtRandom());
+			return new Cluster(retClusterList);
 		}
 	}
-	
 }

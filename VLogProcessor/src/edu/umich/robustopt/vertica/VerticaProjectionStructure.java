@@ -70,14 +70,13 @@ public class VerticaProjectionStructure extends PhysicalStructure  {
 	 * Creates a CREATE PROJECTION DDL statement used to implement this projection 
 	 * at schema.projName
 	 * 
-	 * @param schema
-	 * @param projName
+	 * @param structureName ("schema.projName")
 	 * @return
 	 */
-	public String createProjectionSql(String schema, String projName) {
+	public ArrayList<String> createPhysicalStructureSQL(String structureName) throws Exception {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CREATE PROJECTION ");
-		sb.append(schema + "." + projName);
+		sb.append(structureName);
 		sb.append("(");
 		
 		List<String> elems = new ArrayList<String>();
@@ -96,7 +95,11 @@ public class VerticaProjectionStructure extends PhysicalStructure  {
 		}
 		
 		sb.append(" UNSEGMENTED ALL NODES");
-		return sb.toString();
+		
+		String createProjectionSql = sb.toString();
+		ArrayList<String> res = new ArrayList<String>();
+		res.add(createProjectionSql);
+		return res;
 	}
 	
 

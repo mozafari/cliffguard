@@ -37,19 +37,19 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionShiyong
 	}};
 
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionShiyong(Map<String, Schema> schemaMap, 
-			List<String> allPossibleSqlQueries, Set<UnionOption> option) throws Exception {
-		super(schemaMap, allPossibleSqlQueries, option);
+			List<String> exampleSqlQueries, Set<UnionOption> option) throws Exception {
+		super(schemaMap, exampleSqlQueries, option);
 	}
 	
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionShiyong(
-			String dbAlias, String DBVendor, List<String> allPossibleSqlQueries, Set<UnionOption> option) throws Exception {
-		super(dbAlias, DBVendor, allPossibleSqlQueries, option);
+			String dbAlias, String DBVendor, List<String> exampleSqlQueries, Set<UnionOption> option) throws Exception {
+		super(dbAlias, DBVendor, exampleSqlQueries, option);
 	}
 	
 	public EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionShiyong(String dbAlias,
 			List<DatabaseLoginConfiguration> allDatabaseConfigurations,
-			List<String> allPossibleSqlQueries, Set<UnionOption> option) throws Exception {
-			super(dbAlias, allDatabaseConfigurations, allPossibleSqlQueries, option);
+			List<String> exampleSqlQueries, Set<UnionOption> option) throws Exception {
+			super(dbAlias, allDatabaseConfigurations, exampleSqlQueries, option);
 			if (option.isEmpty()) {
 				throw new Exception("Should at least has a clause in option");
 			}
@@ -108,19 +108,19 @@ public class EuclideanDistanceWorkloadGeneratorFromLogFileWithSimpleUnionShiyong
 		Double newDist = Double.NaN;
 		int windowSize = curWindow.size();
 		Clustering clusteringQueryEquality = getClustering();
-		int listSize = allPossibleLogQueries.size();
+		int listSize = exampleSqlQueries.size();
 		int numOfTrials = 50;
 		int upperThreshold = 4;
 		double lowerThreshold = 0.95;
 		
 		for (int count = 0; count < numOfTrials; count++) {
 			if (listSize <= windowSize) {
-				allPossibleLogQueries.addAll(allPossibleLogQueries);
+				exampleSqlQueries.addAll(exampleSqlQueries);
 				listSize *= 2;
 			}
 			int r = Randomness.randGen.nextInt(listSize - windowSize);
 			int i = windowSize + r;
-			List<Query> queries = new ArrayList<Query>(allPossibleLogQueries.subList(i - windowSize, i));
+			List<Query> queries = new ArrayList<Query>(exampleSqlQueries.subList(i - windowSize, i));
 			EuclideanDistance newEDist = distanceGenerator.distance(curWindow, queries);
 			newDist = newEDist.getDistance();
 			if((newDist > dist) || (newDist < dist && newDist > lowerThreshold * dist)){//can add 0.95 as parameter

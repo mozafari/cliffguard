@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.umich.robustopt.physicalstructures.Index;
+import edu.umich.robustopt.common.RecordedStatement;
 
 public class MicrosoftIndex extends Index implements Serializable {
 
@@ -142,12 +143,12 @@ public class MicrosoftIndex extends Index implements Serializable {
 		return true;
 	}
 
-	public boolean deploy(Connection conn) {
+	public boolean deploy(Connection conn) throws Exception {
 		return deploy(conn, false);
 	}
-
-	public boolean deploy(Connection conn, boolean debug) {
-
+	
+	@Override
+	public ArrayList<String> createPhysicalStructureSQL(String structureName) throws Exception {
 		String createIndexSql = "CREATE";
 
 		// UNIQUE
@@ -156,14 +157,12 @@ public class MicrosoftIndex extends Index implements Serializable {
 		}
 
 		// CLUSTERED/NONCLUSTERED
-		if (indexType == TYPE_CLUSTERED) {
+		if (indexType == TYPE_CLUSTERED)
 			createIndexSql += " CLUSTERED";
-		} else if (indexType == TYPE_NONCLUSTERED) {
+		else if (indexType == TYPE_NONCLUSTERED)
 			createIndexSql += " NONCLUSTERED";
-		} else {
-			System.out.println("Unsupported index type: " + indexType);
-			return false;
-		}
+		else
+			throw new Exception("Unsupported index type: " + indexType);
 
 		createIndexSql += " INDEX";
 		createIndexSql += " " + indexName + " ON " + schemaName + "." + tableName;
@@ -206,22 +205,26 @@ public class MicrosoftIndex extends Index implements Serializable {
 
 		//default options
 		createIndexSql += " WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]"; 
-
-		if (debug) {
-			System.out.println("Deploy Statement:\n" + createIndexSql);
-		}
-
+		
+		ArrayList<String> res = new ArrayList<String>();
+		res.add(createIndexSql);
+		return res;
+	}
+	
+	
+	public boolean deploy(Connection conn, boolean debug) throws Exception {
+		String createIndexSql = createPhysicalStructureSQL("").get(0);
 		try
 		{
-			Statement stmt = conn.createStatement();
-			stmt.executeUpdate(createIndexSql);
-			stmt.close();
+			RecordedStatement rstmt = new RecordedStatement(conn.createStatement());
+			rstmt.executeUpdate(createIndexSql, true);
+			rstmt.close();
+			rstmt.finishDeploy(this);
 		} catch (SQLException e) {
 			System.out.println("Failed to deploy an index with following statement:\n" + createIndexSql);
 			e.printStackTrace();
 			return false;
 		}
-		
 		return true;
 	}
 

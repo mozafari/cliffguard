@@ -17,13 +17,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-
-
 import edu.umich.robustopt.clustering.Cluster;
 import edu.umich.robustopt.clustering.ClusteredWindow;
 import edu.umich.robustopt.common.BLog;
@@ -45,8 +38,8 @@ import edu.umich.robustopt.vertica.VerticaLatencyMeter;
 import edu.umich.robustopt.vertica.VerticaQueryPlanParser;
 
 public abstract class LatencyMeter {
-	//private Connection queryConnection;
-	//private Connection controlConnection;
+	protected Connection queryConnection;
+	protected Connection controlConnection;
 	protected DatabaseLoginConfiguration databaseLogin;
 	protected boolean emptyCacheForEachRun;
 	protected ExperimentCache experimentCache;
@@ -65,9 +58,11 @@ public abstract class LatencyMeter {
 	protected transient long numberOfCasesWithPreviouslySeenPlan = 0;
 	protected transient long numberOfCasesIdenticalWithPreviousCases= 0;
 	
-	public LatencyMeter (LogLevel verbosity, boolean emptyCacheForEachRun, DatabaseLoginConfiguration databaseLogin, ExperimentCache experimentCache, DatabaseInstance dbDeployment, DBDeployer dbDeployer, long howLongToWaitForEachQueryInSecondsBeforeConsideringItInfinite) {
+	public LatencyMeter (LogLevel verbosity, boolean emptyCacheForEachRun, DatabaseLoginConfiguration databaseLogin, ExperimentCache experimentCache, DatabaseInstance dbDeployment, DBDeployer dbDeployer, long howLongToWaitForEachQueryInSecondsBeforeConsideringItInfinite) throws Exception {
 		this.emptyCacheForEachRun = emptyCacheForEachRun;
 		this.databaseLogin = databaseLogin;
+		this.queryConnection = databaseLogin.createConnection();
+		this.controlConnection = databaseLogin.createConnection();
 		this.experimentCache = experimentCache;
 		this.dbDeployment = dbDeployment;
 		this.dbDeployer = dbDeployer;
@@ -106,29 +101,24 @@ public abstract class LatencyMeter {
 	/**
 	 * return time is in miliseconds or optimizer cost units
 	 * @param query
-	 * @param whichProjectionsToInclude
+	 * @param physicalProjectionsToInclude
 	 * @return
 	 * @throws SQLException
 	 */
-	public void measureLatency(PerformanceRecord performanceRecord, List<PhysicalStructure> whichProjectionsToInclude, String designAlgorithmName, boolean useExplainInsteadOfRunningQueries) throws Exception {
-		measureLatency(performanceRecord, whichProjectionsToInclude, designAlgorithmName, 1, useExplainInsteadOfRunningQueries);
+	public void measureLatency(PerformanceRecord performanceRecord, List<PhysicalStructure> physicalStructuresToInclude, String designAlgorithmName, boolean useExplainInsteadOfRunningQueries) throws Exception {
+		measureLatency(performanceRecord, physicalStructuresToInclude, designAlgorithmName, 1, useExplainInsteadOfRunningQueries);
 	}
 
 	
 	/**
 	 * return time is in miliseconds or optimizer cost units
 	 * @param query
-	 * @param whichProjectionsToInclude
+	 * @param physicalProjectionsToInclude
 	 * @return
 	 * @throws SQLException
 	 */			
-	
-	public abstract void measureLatency(PerformanceRecord performanceRecord, List<PhysicalStructure> whichProjectionsToInclude, 
-			String designAlgorithmName, int numberOfRepetitions, boolean useExplainInsteadOfRunningQueries) throws Exception;
-
-	
-	/*
-	public void measureLatency(PerformanceRecord performanceRecord, List<PhysicalStructure> whichProjectionsToInclude, 
+		
+	public void measureLatency(PerformanceRecord performanceRecord, List<PhysicalStructure> physicalStructuresToInclude, 
 			String designAlgorithmName, int numberOfRepetitions, boolean useExplainInsteadOfRunningQueries) throws Exception {
 		assert (numberOfRepetitions>=1);
 
@@ -136,16 +126,16 @@ public abstract class LatencyMeter {
 		PerformanceValue performanceValue;
 		boolean needsAccurate = !useExplainInsteadOfRunningQueries;
 		
-		if (experimentCache!=null && experimentCache.getPerformance(query, new PhysicalDesign(whichProjectionsToInclude), needsAccurate) != null) {
-			performanceValue = experimentCache.getPerformance(query, new PhysicalDesign(whichProjectionsToInclude), needsAccurate);
+		if (experimentCache!=null && experimentCache.getPerformance(query, new PhysicalDesign(physicalStructuresToInclude), needsAccurate) != null) {
+			performanceValue = experimentCache.getPerformance(query, new PhysicalDesign(physicalStructuresToInclude), needsAccurate);
 			log.status(LogLevel.DEBUG, "performance value with this allowed projections fetched from cache.");
 			++numberOfCasesIdenticalWithPreviousCases;
 		} else { // we need to measure those!
 			Timer t1 = new Timer();
-			//System.out.println("performance record was NOT found in the cache.");
-			String theFirstQueryPlan = returnQueryPlan(query, new PhysicalDesign(whichProjectionsToInclude));
-			
+			String theFirstQueryPlan = getQueryPlan(query, physicalStructuresToInclude);
+			cleanUpSettings();
 			secondsSpentProducingQueryPlans += t1.lapSeconds();
+			
 			if (experimentCache!=null && experimentCache.getPerformance(query, theFirstQueryPlan, needsAccurate) !=null) {
 				performanceValue = experimentCache.getPerformance(query, theFirstQueryPlan, needsAccurate);
 				log.status(LogLevel.DEBUG, "performance value with this query plan fetched from cache.");
@@ -161,22 +151,29 @@ public abstract class LatencyMeter {
 					if (emptyCacheForEachRun)
 						emptyCache();
 					
-					PlanEstimate pe = getQueryPlanAndCostEstimate();
+					PlanEstimate pe = getQueryPlanAndCostEstimate(query, physicalStructuresToInclude);
 
 					allQueryPlans.add(pe.getQueryPlan());
 					allOptimizerCosts.add(pe.getOptmizerCostEstimate());
 					
+					boolean failed = false;
+					String failureMessage = null;
 					if (!useExplainInsteadOfRunningQueries) {
-						boolean failed = false;
+						
 						log.status(LogLevel.DEBUG, "Executing: " + query);
 						try {
 							//run your query here!
 							long duration = measureQueryLatencyInMilliSecondsWithTimeout(query, howLongToWaitForEachQueryInSecondsBeforeConsideringItInfinite, log);
 							allDurations.add(duration);
 						} catch (Exception e) {
-							throw e;
+							failed = true;
+							failureMessage = e.toString();
 						}
 					}
+					
+					cleanUpSettings();
+					if (failed)
+						throw new Exception(failureMessage);
 				}
 				
 				for (String qplan : allQueryPlans) {
@@ -194,14 +191,18 @@ public abstract class LatencyMeter {
 			}
 			
 			if (experimentCache!=null)
-				experimentCache.cachePerformance(query, new PhysicalDesign(whichProjectionsToInclude), needsAccurate, performanceValue);
+				experimentCache.cachePerformance(query, new PhysicalDesign(physicalStructuresToInclude), needsAccurate, performanceValue);
 		}
 
-		performanceRecord.record(designAlgorithmName, new PerformanceValueWithDesign(performanceValue, new PhysicalDesign(whichProjectionsToInclude)));
+		performanceRecord.record(designAlgorithmName, new PerformanceValueWithDesign(performanceValue, new PhysicalDesign(physicalStructuresToInclude)));
 	}
-	*/
+	
+	// After each run, we may need to clean up settings like optimizer directives.
+	protected abstract void cleanUpSettings() throws Exception;
+	
+	protected abstract PlanEstimate getQueryPlanAndCostEstimate(String query, List<PhysicalStructure> physicalStructuresToInclude) throws Exception;
 		
-	protected abstract String returnQueryPlan(String query, PhysicalDesign physicalDesign) throws Exception;
+	protected abstract String getQueryPlan(String query, List<PhysicalStructure> physicalStructuresToInclude) throws Exception;
 
 	protected Map<PhysicalStructure, DeployedPhysicalStructure> getProjectionStructureMap() throws Exception {
 		Set<DeployedPhysicalStructure> currentProjections = dbDeployment.getCurrentlyDeployedStructures();
@@ -256,9 +257,11 @@ public abstract class LatencyMeter {
         return res;
 	}
 
-	public Long measureQueryLatencyInMilliSecondsWithTimeout(String sql, long timeoutInSeconds, Statement primary_stmt, Statement secondary_stmt, BLog log) throws Exception {
+	public Long measureQueryLatencyInMilliSecondsWithTimeout(String sql, long timeoutInSeconds, BLog log) throws Exception {
 		// String sql = "select count(*) from st_etl_2.ident_83 a left outer join st_etl_2.ident_83 b on a.ident_2669 = b.ident_2669 and b.ident_2251 = a.ident_2251";
 		
+		Statement primary_stmt = queryConnection.createStatement();
+		Statement secondary_stmt = controlConnection.createStatement();
         ExecutorService executor = Executors.newSingleThreadExecutor();
         QueryMeter queryMeter = new QueryMeter(sql, primary_stmt, log);
         Future<Long> future = executor.submit(queryMeter);
@@ -324,25 +327,40 @@ public abstract class LatencyMeter {
 		return lAvgLatency;
 	}
 	
-	public static void main(String[] args) throws Exception {
-		ExperimentCache experimentCache = ExperimentCache.loadCacheFromFile("/tmp/blah.cache");
-		String dbName = "wide";
-		DatabaseLoginConfiguration dbLogin = VerticaConnection.createDefaultDBLoginByNameAndServerAlias(dbName, "real_full_db");
-		DBDeployer dbDeployer = new VerticaDeployer(LogLevel.VERBOSE, dbLogin, experimentCache, false);
-		DatabaseInstance dbDeployment = dbDeployer;
-		LatencyMeter latencyMeter = new VerticaLatencyMeter(LogLevel.VERBOSE, true, dbLogin, new ExperimentCache("/tmp/blah2.cache", 1, 1, 1, new VerticaQueryPlanParser()), 
-				dbDeployment, null, 10*60);
-		
-		PhysicalStructure projStruct = experimentCache.getDeployedPhysicalStructureBaseNamesToStructures().get("proj_5250002");
-		List<PhysicalStructure> includedProjections = new ArrayList<PhysicalStructure>();
-		includedProjections.add(projStruct);
-		String query = "SELECT min(col42) FROM public.wide100 WHERE col42 <= 1154 AND col29 <= 1170 LIMIT 10;";
-		List<String> chosenQueries = new ArrayList<String>();
-		chosenQueries.add(query);
-		boolean isYes = latencyMeter.thisQueryUsesAtLeastOneOfTheseStructures(query, includedProjections);
-		System.out.println("Answer was " + isYes);
-		
-	}
+    protected class PlanEstimate {
+    	final String queryPlan;
+    	final Long optmizerCostEstimate;
+    	public PlanEstimate(String queryPlan, Long optimizerCostEstimate) {
+    		this.queryPlan = queryPlan;
+    		this.optmizerCostEstimate = optimizerCostEstimate;
+    	}
+    	public String getQueryPlan() {
+    		return queryPlan;
+    	}
+    	public Long getOptmizerCostEstimate() {
+    		return optmizerCostEstimate;
+    	}
+    }
+	
+//	public static void main(String[] args) throws Exception {
+//		ExperimentCache experimentCache = ExperimentCache.loadCacheFromFile("/tmp/blah.cache");
+//		String dbName = "wide";
+//		DatabaseLoginConfiguration dbLogin = VerticaConnection.createDefaultDBLoginByNameAndServerAlias(dbName, "real_full_db");
+//		DBDeployer dbDeployer = new VerticaDeployer(LogLevel.VERBOSE, dbLogin, experimentCache, false);
+//		DatabaseInstance dbDeployment = dbDeployer;
+//		LatencyMeter latencyMeter = new VerticaLatencyMeter(LogLevel.VERBOSE, true, dbLogin, new ExperimentCache("/tmp/blah2.cache", 1, 1, 1, new VerticaQueryPlanParser()), 
+//				dbDeployment, null, 10*60);
+//		
+//		PhysicalStructure projStruct = experimentCache.getDeployedPhysicalStructureBaseNamesToStructures().get("proj_5250002");
+//		List<PhysicalStructure> includedProjections = new ArrayList<PhysicalStructure>();
+//		includedProjections.add(projStruct);
+//		String query = "SELECT min(col42) FROM public.wide100 WHERE col42 <= 1154 AND col29 <= 1170 LIMIT 10;";
+//		List<String> chosenQueries = new ArrayList<String>();
+//		chosenQueries.add(query);
+//		boolean isYes = latencyMeter.thisQueryUsesAtLeastOneOfTheseStructures(query, includedProjections);
+//		System.out.println("Answer was " + isYes);
+//		
+//	}
 
 }
 
@@ -448,23 +466,8 @@ class QueryMeter implements Callable<Long> {
     }
 }
 
-class PlanEstimate {
-	final String queryPlan;
-	final Long optmizerCostEstimate;
-	public PlanEstimate(String queryPlan, Long optimizerCostEstimate) {
-		this.queryPlan = queryPlan;
-		this.optmizerCostEstimate = optimizerCostEstimate;
-	}
-	public String getQueryPlan() {
-		return queryPlan;
-	}
-	public Long getOptmizerCostEstimate() {
-		return optmizerCostEstimate;
-	}
-	
-	
-}
 
+/*
 class PlanEstimateDuration extends PlanEstimate {
 	final Long duration;
 	public PlanEstimateDuration(String queryPlan, Long optimizerCostEstimate, Long duration) {
@@ -475,7 +478,6 @@ class PlanEstimateDuration extends PlanEstimate {
 		return duration;
 	}
 	
-	/*
 	List<String> allQueryPlans = new ArrayList<String>();
 	List<Long> allOptimizerCostEstimates = new ArrayList<Long>();
 	List<Long> allDurations = new ArrayList<Long>();
@@ -497,5 +499,5 @@ class PlanEstimateDuration extends PlanEstimate {
 	public List<Long> getAllDurations() {
 		return allDurations;
 	}
-	*/
 }
+*/

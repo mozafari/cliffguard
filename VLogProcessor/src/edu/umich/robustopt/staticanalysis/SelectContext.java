@@ -36,7 +36,7 @@ import edu.umich.robustopt.workloads.DistributionDistancePair;
  */
 public class SelectContext {
 	
-	public static final boolean NameResolutionLowerCase = true;
+	public static final boolean NameResolutionLowerCase = false;
 	
 	public static String toLowerCaseIfNecessary(String s) {
 		if (NameResolutionLowerCase)

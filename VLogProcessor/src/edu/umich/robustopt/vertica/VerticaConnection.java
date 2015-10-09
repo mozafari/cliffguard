@@ -104,14 +104,6 @@ public class VerticaConnection {
 		return db;
 	}
 	
-	public static Connection createDefaultConnectionByNameAndServerAlias(String DBname, String server_alias) throws Exception {
-		DatabaseLoginConfiguration db = createDefaultDBLoginByNameAndServerAlias(DBname, server_alias);
-		
-		Connection dbConnection = createConnection(db);
-
-		return dbConnection;
-	}
-
 	private static void printConnectionError(String DBhost) {
 		System.err.println("Could not establish connection to server: " + DBhost + 
 				"\nMake sure the server is running, and you are connected to internet.\n");
@@ -123,30 +115,5 @@ public class VerticaConnection {
 		System.err.println("Alternatively, make sure your DB's authentication configuration is:\n");
 		System.err.println("ClientAuthentication = local all trust\nClientAuthentication = host all 0.0.0.0/0 md5");
 		
-	}
-
-	public static void main(String argv[])  throws Exception {
-		Connection dbConnection = createDefaultConnectionByNameAndServerAlias("tpch", "vm_full_db");
-		Statement stmt = dbConnection.createStatement();
-		try {
-			stmt.setQueryTimeout(1);
-			Timer timer = new Timer();
-			ResultSet res = stmt.executeQuery("SELECT l_suppkey, min(l_returnflag) FROM lineitem WHERE l_linenumber <= 2 GROUP BY l_suppkey LIMIT 10");
-			long milisecs = (long)timer.lapMillis();
-			int rc = 0;
-			while (res.next()) {
-				System.out.println(res.getInt(1) + " " + res.getString(2));
-				++ rc;
-			}
-			res.close();
-			System.out.println("read "+ rc + " rows in "+milisecs + " ms.");
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			System.out.println("Query timed out!");
-		}
-		stmt.close();
-		
-		System.out.println("Done!");
 	}
 }

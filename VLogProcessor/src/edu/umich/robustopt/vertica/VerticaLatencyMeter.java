@@ -16,12 +16,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 
 import edu.umich.robustopt.clustering.Cluster;
 import edu.umich.robustopt.clustering.ClusteredWindow;
@@ -45,10 +41,7 @@ import edu.umich.robustopt.util.Pair;
 import edu.umich.robustopt.util.StringUtils;
 import edu.umich.robustopt.util.Timer;
 
-public class VerticaLatencyMeter extends LatencyMeter {
-	private Connection queryConnection;
-	private Connection controlConnection;
-	
+public class VerticaLatencyMeter extends LatencyMeter {	
 //	private transient long secondsSpentWaitingForMissingStructuresToBeDeployed = 0;
 //	private transient long secondsSpentMeasuringQueryLatency = 0;
 //	private transient long secondsSpentProducingQueryPlans = 0;
@@ -58,7 +51,7 @@ public class VerticaLatencyMeter extends LatencyMeter {
 //	private transient long numberOfCasesWithPreviouslySeenPlan = 0;
 //	private transient long numberOfCasesIdenticalWithPreviousCases= 0;
 	
-	public VerticaLatencyMeter (LogLevel verbosity, boolean emptyCacheForEachRun, DatabaseLoginConfiguration databaseLogin, ExperimentCache experimentCache, DatabaseInstance dbDeployment, DBDeployer dbDeployer, long howLongToWaitForEachQueryInSecondsBeforeConsideringItInfinite) {
+	public VerticaLatencyMeter (LogLevel verbosity, boolean emptyCacheForEachRun, DatabaseLoginConfiguration databaseLogin, ExperimentCache experimentCache, DatabaseInstance dbDeployment, DBDeployer dbDeployer, long howLongToWaitForEachQueryInSecondsBeforeConsideringItInfinite) throws Exception {
 		super(verbosity, emptyCacheForEachRun, databaseLogin, experimentCache, dbDeployment, dbDeployer, howLongToWaitForEachQueryInSecondsBeforeConsideringItInfinite);
 		try {
 			this.queryConnection = VerticaConnection.createConnection(databaseLogin);
@@ -211,13 +204,38 @@ public class VerticaLatencyMeter extends LatencyMeter {
 		*/
 	}
 
+	protected void cleanUpSettings() throws Exception {
+		Statement stmt = queryConnection.createStatement();
+		stmt.execute("select set_optimizer_directives('AvoidUsingProjections=');");
+		stmt.close();
+	}
 	
-	protected String returnQueryPlan(String query, PhysicalDesign physicalDesign) throws Exception {
-		List<PhysicalStructure> whichProjectionsToInclude = 
-				Utils.convertPhysicalStructureSetIntoPhysicalList(physicalDesign.getPhysicalStructures());
-		Set<NamedIdentifier> excludeList = whatProjectionsToExclude(whichProjectionsToInclude );
+	protected PlanEstimate getQueryPlanAndCostEstimate(String query, List<PhysicalStructure> physicalStructuresToInclude) throws Exception {
+		Set<NamedIdentifier> excludeList = whatProjectionsToExclude(physicalStructuresToInclude);
 		
-		// first, get the query plan!
+		StringBuilder directive = new StringBuilder();
+		directive.append("AvoidUsingProjections=");
+		directive.append(StringUtils.Join(StringUtils.ElemStringify(new ArrayList<NamedIdentifier>(excludeList)), ","));
+		directive.append("");
+		
+		Statement stmt = queryConnection.createStatement();
+		log.status(LogLevel.DEBUG, "set_optimizer_directive: " + directive);
+		stmt.execute("select set_optimizer_directives('"+directive+"');");
+
+		ResultSet rs = stmt.executeQuery("explain " + query);
+		StringBuilder queryPlan = new StringBuilder();		
+		while (rs.next())
+			queryPlan.append(rs.getString(1) + "\n");
+		
+		rs.close();
+		stmt.close();
+		long optimizerCostEstimate = dbDeployer.getQueryPlanParser().extractTotalCostsFromRawPlan(queryPlan.toString());
+		return new PlanEstimate(queryPlan.toString(), optimizerCostEstimate);
+	}
+
+	protected String getQueryPlan(String query, List<PhysicalStructure> physicalStructuresToInclude) throws Exception {
+		Set<NamedIdentifier> excludeList = whatProjectionsToExclude(physicalStructuresToInclude);
+		
 		StringBuilder directive = new StringBuilder();
 		directive.append("AvoidUsingProjections=");
 		directive.append(StringUtils.Join(StringUtils.ElemStringify(new ArrayList<NamedIdentifier>(excludeList)), ","));
@@ -253,169 +271,13 @@ public class VerticaLatencyMeter extends LatencyMeter {
 	
 		StringBuilder queryPlan = new StringBuilder();		
 		while (rs.next())
-		{
 			queryPlan.append(rs.getString(1) + "\n");
-		}
+		
 		rs.close();
 		stmt.close();
-		String theFirstQueryPlan = queryPlan.toString();
-		
-		return theFirstQueryPlan;
+		return queryPlan.toString();
 	}
-
-	/**
-	 * return time is in miliseconds or optimizer cost units
-	 * @param query
-	 * @param whichProjectionsToInclude
-	 * @return
-	 * @throws SQLException
-	 */
-				
-	public void measureLatency(PerformanceRecord performanceRecord, List<PhysicalStructure> whichProjectionsToInclude, 
-			String designAlgorithmName, int numberOfRepetitions, boolean useExplainInsteadOfRunningQueries) throws Exception {
-		assert (numberOfRepetitions>=1);
-
-		String query = performanceRecord.getQuery();		
-		PerformanceValue performanceValue;
-		boolean needsAccurate = !useExplainInsteadOfRunningQueries;
 		
-		if (experimentCache!=null && experimentCache.getPerformance(query, new PhysicalDesign(whichProjectionsToInclude), needsAccurate) != null) {
-			performanceValue = experimentCache.getPerformance(query, new PhysicalDesign(whichProjectionsToInclude), needsAccurate);
-			log.status(LogLevel.DEBUG, "performance value with this allowed projections fetched from cache.");
-			++numberOfCasesIdenticalWithPreviousCases;
-		} else { // we need to measure those!
-			Timer t1 = new Timer();
-			//System.out.println("performance record was NOT found in the cache.");		
-			Set<NamedIdentifier> excludeList = whatProjectionsToExclude(whichProjectionsToInclude);
-	
-			// first, get the query plan!
-			StringBuilder directive = new StringBuilder();
-			directive.append("AvoidUsingProjections=");
-			directive.append(StringUtils.Join(StringUtils.ElemStringify(new ArrayList<NamedIdentifier>(excludeList)), ","));
-			directive.append("");
-			
-			Statement stmt = queryConnection.createStatement();
-			log.status(LogLevel.DEBUG, "set_optimizer_directive: " + directive);
-			stmt.execute("select set_optimizer_directives('"+directive+"');");
-	
-			ResultSet rs = null;
-			boolean successfullyExecuted = false;
-			int iter = 1;
-			while (!successfullyExecuted) {
-				try {
-					rs = stmt.executeQuery("explain " + query);
-					successfullyExecuted = true;
-				} catch (Exception e) {
-					String errMessage = e.getMessage();
-					//Invalid input syntax for integer: "EsE"
-					Pattern projectionNamePattern = Pattern.compile("Invalid input syntax for integer: \"([^\"]*)\"");
-					Matcher m = projectionNamePattern.matcher(errMessage);
-					if (m.find() && false) {
-						String thingToLookFor = "'" + m.group(1) + "'";
-						query = query.replaceAll(thingToLookFor, "1234");
-						log.error("bad query execution: iter=" + iter + " We replaced <" + thingToLookFor +"> with " + 1234 + "\nError was: " + errMessage + " new query is " + query);
-						// we will just re-try
-					} else {
-						log.error("we could not execute or even repair this query: " + query);
-						throw e;
-					}
-				}
-			}
-		
-			StringBuilder queryPlan = new StringBuilder();		
-			while (rs.next())
-			{
-				queryPlan.append(rs.getString(1) + "\n");
-			}
-			rs.close();
-			stmt.close();
-			String theFirstQueryPlan = queryPlan.toString();
-			
-			secondsSpentProducingQueryPlans += t1.lapSeconds();
-			if (experimentCache!=null && experimentCache.getPerformance(query, theFirstQueryPlan, needsAccurate) !=null) {
-				performanceValue = experimentCache.getPerformance(query, theFirstQueryPlan, needsAccurate);
-				log.status(LogLevel.DEBUG, "performance value with this query plan fetched from cache.");
-				++ numberOfCasesWithPreviouslySeenPlan;
-			} else {
-				Timer t2 = new Timer();
-				log.status(LogLevel.DEBUG, "performance value with this query plan was NOT found in cache.");
-				List<Long> allDurations = new ArrayList<Long>();
-				List<Long> allOptimizerCosts = new ArrayList<Long>();
-				List<String> allQueryPlans = new ArrayList<String>();
-				
-				Statement controlStatement = controlConnection.createStatement();
-				for (int rep = 0; rep < numberOfRepetitions; ++ rep) {
-					if (emptyCacheForEachRun)
-						emptyCache();
-					
-					directive = new StringBuilder();
-					directive.append("AvoidUsingProjections=");
-					directive.append(StringUtils.Join(StringUtils.ElemStringify(new ArrayList<NamedIdentifier>(excludeList)), ","));
-					directive.append("");
-					
-					stmt = queryConnection.createStatement();
-					log.status(LogLevel.DEBUG, "set_optimizer_directive: " + directive);
-					stmt.execute("select set_optimizer_directives('"+directive+"');");
-			
-					rs = stmt.executeQuery("explain " + query);
-					queryPlan = new StringBuilder();		
-					while (rs.next())
-					{
-						queryPlan.append(rs.getString(1) + "\n");
-					}
-					allQueryPlans.add(queryPlan.toString());
-					
-					long optimizerCostEstimate = dbDeployer.getQueryPlanParser().extractTotalCostsFromRawPlan(queryPlan.toString());
-					allOptimizerCosts.add(optimizerCostEstimate);
-					
-					boolean failed = false;
-					String failureMessage = null;
-					
-					if (!useExplainInsteadOfRunningQueries) {
-						log.status(LogLevel.DEBUG, "Executing: " + query);
-						try {
-							//run your query here!
-							/* Timer t = new Timer();				
-							ResultSet res = stmt.executeQuery(query);				
-							long duration = (long)t.lapMillis();
-							res.close();*/
-							long duration = measureQueryLatencyInMilliSecondsWithTimeout(query, howLongToWaitForEachQueryInSecondsBeforeConsideringItInfinite, stmt, controlStatement, log);
-							allDurations.add(duration);
-						} catch (Exception e) {
-							failed = true;
-							failureMessage = e.getMessage();
-						}
-	
-						stmt.execute("select set_optimizer_directives('AvoidUsingProjections=');");
-						stmt.close();
-						
-						if (failed)
-							throw new Exception(failureMessage);				
-					}
-				}
-				controlStatement.close();
-				
-				for (String qplan : allQueryPlans) {
-					if (!qplan.toLowerCase().equals(theFirstQueryPlan.toLowerCase()))
-						log.error("Warning: diff query plans: " + qplan + " and " + theFirstQueryPlan);
-				}
-
-				if (useExplainInsteadOfRunningQueries)
-					performanceValue = new PerformanceValue(theFirstQueryPlan, allOptimizerCosts);
-				else
-					performanceValue = new PerformanceValue(theFirstQueryPlan, allDurations, allOptimizerCosts);
-					
-				secondsSpentMeasuringQueryLatency += t2.lapSeconds();
-				++ numberOfCasesWithActualMeasuring;
-			}
-			
-			if (experimentCache!=null)
-				experimentCache.cachePerformance(query, new PhysicalDesign(whichProjectionsToInclude), needsAccurate, performanceValue);
-		}
-
-		performanceRecord.record(designAlgorithmName, new PerformanceValueWithDesign(performanceValue, new PhysicalDesign(whichProjectionsToInclude)));
-	}
-	
 	// vertica makes life hard...
 	// returns identified to the node-specific projection name (not the logical name)
 	// this is because AvoidUsingProjections requires node-specific names
@@ -560,24 +422,24 @@ public class VerticaLatencyMeter extends LatencyMeter {
 	}
 	
 	
-	public static void main(String[] args) throws Exception {
-		ExperimentCache experimentCache = ExperimentCache.loadCacheFromFile("/tmp/blah.cache");
-		String dbName = "wide";
-		DatabaseLoginConfiguration dbLogin = VerticaConnection.createDefaultDBLoginByNameAndServerAlias(dbName, "real_full_db");
-		DBDeployer dbDeployer = new VerticaDeployer(LogLevel.VERBOSE, dbLogin, experimentCache, false);
-		DatabaseInstance dbDeployment = dbDeployer;
-		VerticaLatencyMeter latencyMeter = new VerticaLatencyMeter(LogLevel.VERBOSE, true, dbLogin, new ExperimentCache("/tmp/blah2.cache", 1, 1, 1, new VerticaQueryPlanParser()), dbDeployment, null, 10*60);
-		
-		PhysicalStructure projStruct = (VerticaProjectionStructure) experimentCache.getDeployedPhysicalStructureBaseNamesToStructures().get("proj_5250002");
-		List<PhysicalStructure> includedProjections = new ArrayList<PhysicalStructure>();
-		includedProjections.add(projStruct);
-		String query = "SELECT min(col42) FROM public.wide100 WHERE col42 <= 1154 AND col29 <= 1170 LIMIT 10;";
-		List<String> chosenQueries = new ArrayList<String>();
-		chosenQueries.add(query);
-		boolean isYes = latencyMeter.thisQueryUsesAtLeastOneOfTheseStructures(query, includedProjections);
-		System.out.println("Answer was " + isYes);
-		
-	}
+//	public static void main(String[] args) throws Exception {
+//		ExperimentCache experimentCache = ExperimentCache.loadCacheFromFile("/tmp/blah.cache");
+//		String dbName = "wide";
+//		DatabaseLoginConfiguration dbLogin = VerticaConnection.createDefaultDBLoginByNameAndServerAlias(dbName, "real_full_db");
+//		DBDeployer dbDeployer = new VerticaDeployer(LogLevel.VERBOSE, dbLogin, experimentCache, false);
+//		DatabaseInstance dbDeployment = dbDeployer;
+//		VerticaLatencyMeter latencyMeter = new VerticaLatencyMeter(LogLevel.VERBOSE, true, dbLogin, new ExperimentCache("/tmp/blah2.cache", 1, 1, 1, new VerticaQueryPlanParser()), dbDeployment, null, 10*60);
+//		
+//		PhysicalStructure projStruct = (VerticaProjectionStructure) experimentCache.getDeployedPhysicalStructureBaseNamesToStructures().get("proj_5250002");
+//		List<PhysicalStructure> includedProjections = new ArrayList<PhysicalStructure>();
+//		includedProjections.add(projStruct);
+//		String query = "SELECT min(col42) FROM public.wide100 WHERE col42 <= 1154 AND col29 <= 1170 LIMIT 10;";
+//		List<String> chosenQueries = new ArrayList<String>();
+//		chosenQueries.add(query);
+//		boolean isYes = latencyMeter.thisQueryUsesAtLeastOneOfTheseStructures(query, includedProjections);
+//		System.out.println("Answer was " + isYes);
+//		
+//	}
 
 }
 

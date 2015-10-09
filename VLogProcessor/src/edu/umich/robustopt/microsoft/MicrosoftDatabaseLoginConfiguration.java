@@ -3,6 +3,7 @@ package edu.umich.robustopt.microsoft;
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -41,12 +42,23 @@ public class MicrosoftDatabaseLoginConfiguration extends
 
 	@Override
 	public Connection createConnection() {
-		return MicrosoftConnection.createConnection(this);
+		Connection conn = null;
+		try {
+			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+
+			conn = DriverManager.getConnection(
+					String.format("jdbc:sqlserver://%s:%s;databasename=%s", 
+							getDBhost(), getDBport(), getDBname()), getDBuser(), getDBpasswd());
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		return conn;
 	}
 
 	@Override
 	public Map<String, Schema> getSchemaMap() throws SQLException {
-		Connection conn = MicrosoftConnection.createConnection(this);
+		Connection conn = createConnection();
 
 		// list schemas
 		List<String> schemas = new ArrayList<String>();

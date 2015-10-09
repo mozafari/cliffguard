@@ -15,6 +15,7 @@ import com.relationalcloud.tsqlparser.loader.SchemaLoader;
 import edu.umich.robustopt.dblogin.*;
 
 public class VerticaDatabaseLoginConfiguration extends DatabaseLoginConfiguration {
+	protected static final int TIME_OUT_IN_SECONDS = 1;
 	public VerticaDatabaseLoginConfiguration(boolean empty, String DBalias,
 			String DBhost, Integer DBport, String DBname, String DBuser,
 			String DBpasswd) {
@@ -36,7 +37,29 @@ public class VerticaDatabaseLoginConfiguration extends DatabaseLoginConfiguratio
 
 	@Override
 	public Connection createConnection() throws Exception {
-		return VerticaConnection.createConnection(this);
+		Connection dbConnection = null;
+		try {
+			Class.forName("com.vertica.jdbc.Driver");
+			dbConnection = new ResiliantConnection("jdbc:vertica://" + getDBhost() + ":" + getDBport() + 
+					"/"+getDBname()+"?user=" + getDBuser() +"&password="+getDBpasswd(), TIME_OUT_IN_SECONDS);
+		} catch (Exception e) {
+			printConnectionError(getDBhost());
+			throw e;
+		}
+		return dbConnection;
+	}
+	
+	private void printConnectionError(String DBhost) {
+		System.err.println("Could not establish connection to server: " + DBhost + 
+				"\nMake sure the server is running, and you are connected to internet.\n");
+		
+		/*System.err.println("Also try to run:");
+		for (String hostName : hostNames.keySet())
+			System.err.println("ssh -f -N -c blowfish -C -L "+ portNumbers.get(hostName) +":localhost:5433 barzan@"+hostNames.get(hostName));
+		*/
+		System.err.println("Alternatively, make sure your DB's authentication configuration is:\n");
+		System.err.println("ClientAuthentication = local all trust\nClientAuthentication = host all 0.0.0.0/0 md5");
+		
 	}
 
 	@Override

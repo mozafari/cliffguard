@@ -56,7 +56,7 @@ public class MicrosoftDesigner extends DBDesigner {
 	private String recommendationOutputPath;
 	private String recommendationFilename;
 	private String psExecPath = "C:\\PSTools\\PsExec.exe";
-	private String productionWindowsUsername = "dyoon";
+	private String productionWindowsUsername = "Administrator";
 	private String productionWindowsPassword = "CliffGuard1";
 	private String pathToStatisticsScript;
 	private String statisticsFilename;
@@ -246,6 +246,10 @@ public class MicrosoftDesigner extends DBDesigner {
 		arguments.add("-accepteula");
 
 		arguments.add("\\\\" + testLogin.getDBhost());
+		arguments.add("-u");
+		arguments.add(productionWindowsUsername);
+		arguments.add("-p");
+		arguments.add(productionWindowsPassword);
 		arguments.add("-s");
 		arguments.add("cmd");
 		arguments.add("/c");
@@ -259,6 +263,10 @@ public class MicrosoftDesigner extends DBDesigner {
 		arguments.add("-accepteula");
 		arguments.add("-i");
 		arguments.add("\\\\" + testLogin.getDBhost());
+		arguments.add("-u");
+		arguments.add(productionWindowsUsername);
+		arguments.add("-p");
+		arguments.add(productionWindowsPassword);
 		arguments.add("-s");
 		arguments.add("cmd");
 		arguments.add("/c");
@@ -491,7 +499,6 @@ public class MicrosoftDesigner extends DBDesigner {
 			break;
 		}
 		arguments.add(PDSKeepOption);
-
 		return arguments;
 	}
 
@@ -499,10 +506,10 @@ public class MicrosoftDesigner extends DBDesigner {
 
 		List<String> arguments = new ArrayList<String>();
 
-//		arguments.add(psExecPath);
-//		arguments.add("\\\\" + databaseLogin.getDBhost());
-//		arguments.add("-accepteula");
-//		arguments.add("-i");
+		arguments.add(psExecPath);
+		arguments.add("\\\\" + databaseLogin.getDBhost());
+		arguments.add("-accepteula");
+		arguments.add("-i");
 		
 		arguments.add("sqlcmd");
 
@@ -525,7 +532,6 @@ public class MicrosoftDesigner extends DBDesigner {
 		// input physical design script
 		arguments.add("-i");
 		arguments.add(physicalDesignPath);
-
 		runExternalProcess(arguments);
 		
 		return true;
@@ -541,7 +547,7 @@ public class MicrosoftDesigner extends DBDesigner {
 		{
 			conn = DriverManager.getConnection(
 					String.format("jdbc:sqlserver://%s:%s;databasename=%s", 
-							"localhost", login.getDBport(), login.getDBname()), 
+							login.getDBhost(), login.getDBport(), login.getDBname()), 
 							login.getDBuser(), login.getDBpasswd());
 
 			if (conn != null) {
@@ -768,7 +774,7 @@ public class MicrosoftDesigner extends DBDesigner {
 
         Connection conn = DriverManager.getConnection(
         		String.format("jdbc:sqlserver://%s:%s;databasename=%s", 
-        				"localhost", databaseLogin.getDBport(), databaseLogin.getDBname()), 
+        				databaseLogin.getDBhost(), databaseLogin.getDBport(), databaseLogin.getDBname()), 
         				databaseLogin.getDBuser(), databaseLogin.getDBpasswd());
 
         if (conn != null) {

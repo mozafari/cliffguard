@@ -30,6 +30,7 @@ import edu.umich.robustopt.clustering.WeightedQuery;
 import edu.umich.robustopt.common.BLog.LogLevel;
 import edu.umich.robustopt.dbd.*;
 import edu.umich.robustopt.dblogin.DatabaseLoginConfiguration;
+import edu.umich.robustopt.microsoft.MicrosoftDatabaseLoginConfiguration;
 import edu.umich.robustopt.metering.ExperimentCache;
 import edu.umich.robustopt.physicalstructures.PhysicalDesign;
 import edu.umich.robustopt.physicalstructures.PhysicalStructure;
@@ -56,12 +57,10 @@ public class MicrosoftDesigner extends DBDesigner {
 	private String recommendationOutputPath;
 	private String recommendationFilename;
 	private String psExecPath = "C:\\PSTools\\PsExec.exe";
-	private String productionWindowsUsername = "Administrator";
-	private String productionWindowsPassword = "CliffGuard1";
 	private String pathToStatisticsScript;
 	private String statisticsFilename;
 
-	private DatabaseLoginConfiguration testLogin;
+	private MicrosoftDatabaseLoginConfiguration testLogin;
 
 	transient private long secondsSpentDesigning = 0;
 	transient private long numberOfActualDesigns = 0;
@@ -71,7 +70,7 @@ public class MicrosoftDesigner extends DBDesigner {
 			ExperimentCache experimentCache) throws Exception {
 		super(verbosity, databaseLogin, experimentCache);
 
-		this.testLogin = databaseLogin;
+		this.testLogin = (MicrosoftDatabaseLoginConfiguration)databaseLogin;
 		this.pathToStatisticsScript = pathToStatisticsScript;
 	}
 
@@ -83,7 +82,7 @@ public class MicrosoftDesigner extends DBDesigner {
 		System.out.println("MicrosoftDesigner Main");
 
 		MicrosoftDatabaseLoginConfiguration testLogin = new MicrosoftDatabaseLoginConfiguration(false, "alias", "10.175.210.72",
-				1433, "AdventureWorksEmpty", "sa", "asdf1234!", "EMPTY-DB");
+				1433, "AdventureWorksEmpty", "sa", "asdf1234!", "Administrator", "Cliffguard1", "EMPTY-DB");
 
 		try {
 			MicrosoftDesigner designer = new MicrosoftDesigner(LogLevel.DEBUG, testLogin, null, null);
@@ -247,9 +246,9 @@ public class MicrosoftDesigner extends DBDesigner {
 
 		arguments.add("\\\\" + testLogin.getDBhost());
 		arguments.add("-u");
-		arguments.add(productionWindowsUsername);
+		arguments.add(testLogin.getWindowsUsername());
 		arguments.add("-p");
-		arguments.add(productionWindowsPassword);
+		arguments.add(testLogin.getWindowsPassword());
 		arguments.add("-s");
 		arguments.add("cmd");
 		arguments.add("/c");
@@ -264,9 +263,9 @@ public class MicrosoftDesigner extends DBDesigner {
 		arguments.add("-i");
 		arguments.add("\\\\" + testLogin.getDBhost());
 		arguments.add("-u");
-		arguments.add(productionWindowsUsername);
+		arguments.add(testLogin.getWindowsUsername());
 		arguments.add("-p");
-		arguments.add(productionWindowsPassword);
+		arguments.add(testLogin.getWindowsPassword());
 		arguments.add("-s");
 		arguments.add("cmd");
 		arguments.add("/c");
@@ -393,9 +392,9 @@ public class MicrosoftDesigner extends DBDesigner {
 		arguments.add(psExecPath);
 		arguments.add("\\\\" + testLogin.getDBhost());
 		arguments.add("-u");
-		arguments.add(productionWindowsUsername);
+		arguments.add(testLogin.getWindowsUsername());
 		arguments.add("-p");
-		arguments.add(productionWindowsPassword);
+		arguments.add(testLogin.getWindowsPassword());
 		arguments.add("-accepteula");
 		arguments.add("-i");
 

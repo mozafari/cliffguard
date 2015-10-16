@@ -172,9 +172,6 @@ public class MicrosoftLatencyMeter extends LatencyMeter {
 		}
 		return structureMap;
 	}
-
-	@Override
-	protected void cleanUpSettings() throws Exception {}
 	
 	@Override
 	protected PlanEstimate getQueryPlanAndCostEstimate(String query, List<PhysicalStructure> physicalStructuresToInclude) throws Exception {

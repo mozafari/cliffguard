@@ -203,12 +203,6 @@ public class VerticaLatencyMeter extends LatencyMeter {
 			//throw new Exception("We could not restart the Vertica properly. And there's  the output: " + allLines.toString() + " and here's the error: " + allErrorLines.toString());
 		*/
 	}
-
-	protected void cleanUpSettings() throws Exception {
-		Statement stmt = queryConnection.createStatement();
-		stmt.execute("select set_optimizer_directives('AvoidUsingProjections=');");
-		stmt.close();
-	}
 	
 	protected PlanEstimate getQueryPlanAndCostEstimate(String query, List<PhysicalStructure> physicalStructuresToInclude) throws Exception {
 		Set<NamedIdentifier> excludeList = whatProjectionsToExclude(physicalStructuresToInclude);
@@ -226,10 +220,12 @@ public class VerticaLatencyMeter extends LatencyMeter {
 		StringBuilder queryPlan = new StringBuilder();		
 		while (rs.next())
 			queryPlan.append(rs.getString(1) + "\n");
+		long optimizerCostEstimate = dbDeployer.getQueryPlanParser().extractTotalCostsFromRawPlan(queryPlan.toString());
 		
+		// Let query optimizer use all projections again  
+		stmt.execute("select set_optimizer_directives('AvoidUsingProjections=');");
 		rs.close();
 		stmt.close();
-		long optimizerCostEstimate = dbDeployer.getQueryPlanParser().extractTotalCostsFromRawPlan(queryPlan.toString());
 		return new PlanEstimate(queryPlan.toString(), optimizerCostEstimate);
 	}
 
@@ -272,6 +268,9 @@ public class VerticaLatencyMeter extends LatencyMeter {
 		StringBuilder queryPlan = new StringBuilder();		
 		while (rs.next())
 			queryPlan.append(rs.getString(1) + "\n");
+		
+		// Let query optimizer use all projections again  
+		stmt.execute("select set_optimizer_directives('AvoidUsingProjections=');");
 		
 		rs.close();
 		stmt.close();
@@ -422,25 +421,23 @@ public class VerticaLatencyMeter extends LatencyMeter {
 	}
 	
 	
-//	public static void main(String[] args) throws Exception {
-//		ExperimentCache experimentCache = ExperimentCache.loadCacheFromFile("/tmp/blah.cache");
-//		String dbName = "wide";
-//		DatabaseLoginConfiguration dbLogin = VerticaConnection.createDefaultDBLoginByNameAndServerAlias(dbName, "real_full_db");
-//		DBDeployer dbDeployer = new VerticaDeployer(LogLevel.VERBOSE, dbLogin, experimentCache, false);
-//		DatabaseInstance dbDeployment = dbDeployer;
-//		VerticaLatencyMeter latencyMeter = new VerticaLatencyMeter(LogLevel.VERBOSE, true, dbLogin, new ExperimentCache("/tmp/blah2.cache", 1, 1, 1, new VerticaQueryPlanParser()), dbDeployment, null, 10*60);
-//		
-//		PhysicalStructure projStruct = (VerticaProjectionStructure) experimentCache.getDeployedPhysicalStructureBaseNamesToStructures().get("proj_5250002");
-//		List<PhysicalStructure> includedProjections = new ArrayList<PhysicalStructure>();
-//		includedProjections.add(projStruct);
-//		String query = "SELECT min(col42) FROM public.wide100 WHERE col42 <= 1154 AND col29 <= 1170 LIMIT 10;";
-//		List<String> chosenQueries = new ArrayList<String>();
-//		chosenQueries.add(query);
-//		boolean isYes = latencyMeter.thisQueryUsesAtLeastOneOfTheseStructures(query, includedProjections);
-//		System.out.println("Answer was " + isYes);
-//		
-//	}
-
+	public static void main(String[] args) throws Exception {
+		ExperimentCache experimentCache = ExperimentCache.loadCacheFromFile("/tmp/blah.cache");
+		String dbName = "wide";
+		DatabaseLoginConfiguration dbLogin = VerticaConnection.createDefaultDBLoginByNameAndServerAlias(dbName, "real_full_db");
+		DBDeployer dbDeployer = new VerticaDeployer(LogLevel.VERBOSE, dbLogin, experimentCache, false);
+		DatabaseInstance dbDeployment = dbDeployer;
+		VerticaLatencyMeter latencyMeter = new VerticaLatencyMeter(LogLevel.VERBOSE, true, dbLogin, new ExperimentCache("/tmp/blah2.cache", 1, 1, 1, new VerticaQueryPlanParser()), dbDeployment, null, 10*60);
+		
+		PhysicalStructure projStruct = (VerticaProjectionStructure) experimentCache.getDeployedPhysicalStructureBaseNamesToStructures().get("proj_5250002");
+		List<PhysicalStructure> includedProjections = new ArrayList<PhysicalStructure>();
+		includedProjections.add(projStruct);
+		String query = "SELECT min(col42) FROM public.wide100 WHERE col42 <= 1154 AND col29 <= 1170 LIMIT 10;";
+		List<String> chosenQueries = new ArrayList<String>();
+		chosenQueries.add(query);
+		boolean isYes = latencyMeter.thisQueryUsesAtLeastOneOfTheseStructures(query, includedProjections);
+		System.out.println("Answer was " + isYes);
+	}
 }
 
 /*

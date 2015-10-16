@@ -22,8 +22,8 @@ CliffGuard is developed by Barzan Mozafari et al. at the University of Michigan,
 For more documentations and information visit http://cliffguard.org
 
 CliffGuard currently supports the following database management systems:
-- HP Vertica 
-- Microsoft SQL Server
+- HP Vertica (Version 6.x.x and Version 7.x.x)
+- Microsoft SQL Server (Developer Edition and Enterprise Edition)
 
 ********************************************
 * List of Tools

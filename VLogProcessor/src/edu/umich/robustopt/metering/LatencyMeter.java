@@ -133,7 +133,6 @@ public abstract class LatencyMeter {
 		} else { // we need to measure those!
 			Timer t1 = new Timer();
 			String theFirstQueryPlan = getQueryPlan(query, physicalStructuresToInclude);
-			cleanUpSettings();
 			secondsSpentProducingQueryPlans += t1.lapSeconds();
 			
 			if (experimentCache!=null && experimentCache.getPerformance(query, theFirstQueryPlan, needsAccurate) !=null) {
@@ -170,8 +169,6 @@ public abstract class LatencyMeter {
 							failureMessage = e.toString();
 						}
 					}
-					
-					cleanUpSettings();
 					if (failed)
 						throw new Exception(failureMessage);
 				}
@@ -196,9 +193,6 @@ public abstract class LatencyMeter {
 
 		performanceRecord.record(designAlgorithmName, new PerformanceValueWithDesign(performanceValue, new PhysicalDesign(physicalStructuresToInclude)));
 	}
-	
-	// After each run, we may need to clean up settings like optimizer directives.
-	protected abstract void cleanUpSettings() throws Exception;
 	
 	protected abstract PlanEstimate getQueryPlanAndCostEstimate(String query, List<PhysicalStructure> physicalStructuresToInclude) throws Exception;
 		

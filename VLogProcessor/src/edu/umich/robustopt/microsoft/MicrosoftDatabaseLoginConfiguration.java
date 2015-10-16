@@ -22,23 +22,42 @@ public class MicrosoftDatabaseLoginConfiguration extends
 		DatabaseLoginConfiguration {
 
 	String SQLServerName;
-
+	private String WindowsUsername;
+	private String WindowsPassword;
+	
 	public MicrosoftDatabaseLoginConfiguration() {
 		SQLServerName = "";
 	}
 
 	public MicrosoftDatabaseLoginConfiguration(boolean empty, String DBalias,
 			String DBhost, Integer DBport, String DBname, String DBuser,
-			String DBpasswd, String SQLServerName) {
+			String DBpasswd, String WindowsUsername, String WindowsPassword, String SQLServerName) {
 		super(empty, DBalias, DBhost, DBport, DBname, DBuser, DBpasswd);
 
 		this.SQLServerName = SQLServerName;
+		this.WindowsUsername = WindowsUsername;
+		this.WindowsPassword = WindowsPassword;
 	}
 
 	public String getSQLServerName() {
 		return SQLServerName;
 	}
-
+	
+	public void setWindowsUsername(String WindowsUsername) {
+		this.WindowsUsername = WindowsUsername;
+	}
+	
+	public String getWindowsUsername() {
+		return WindowsUsername;
+	}
+	
+	public void setWindowsPassword(String WindowsPassword) {
+		this.WindowsPassword = WindowsPassword;
+	}
+	
+	public String getWindowsPassword() {
+		return WindowsPassword;
+	}
 
 	@Override
 	public Connection createConnection() {

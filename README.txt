@@ -22,8 +22,8 @@ CliffGuard is developed by Barzan Mozafari et al. at the University of Michigan,
 For more documentations and information visit http://cliffguard.org
 
 CliffGuard currently supports the following database management systems:
-- HP Vertica 
-- Microsoft SQL Server
+- HP Vertica (Version 6.x.x and Version 7.x.x)
+- Microsoft SQL Server (Developer Edition and Enterprise Edition)
 
 ********************************************
 * List of Tools
@@ -93,6 +93,7 @@ query_file: a CSV file (using | as separators) with timestamp followed by a sing
 	2011-12-14 19:38:51|commit
 
 output_dir: an empty directory to store the output of the analysis
+
 window_size_in_days: number of days in each window, as a unit of anlysis (e.g., 7 for analyzing weekly patterns and 30 for analyzing monthly patterns). Default: 7
 
 number_of_initial_windows_to_skip: to account for early stages of the database lifetime when few query had run. Default:0 

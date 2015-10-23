@@ -41,9 +41,9 @@ public abstract class QueryLogAnalyzer <Q extends Query>{
 		List<DistributionDistance> allDistances = new ArrayList<DistributionDistance>();
 		
 		for (int i=0; i<queryWindowList.size()-lagBetweenPairsOfWindows; ++i) {
-			DistributionDistance d = distDistanceGenerator.distance(queryWindowList.get(i).getQueries(), queryWindowList.get(i+1).getQueries());
+			DistributionDistance d = distDistanceGenerator.distance(queryWindowList.get(i).getQueries(), queryWindowList.get(i+lagBetweenPairsOfWindows).getQueries());
 			allDistances.add(d);
-			log.status(LogLevel.VERBOSE, "====================\nWin"+ i + " had " + queryWindowList.get(i).getQueries().size()  + " queries, Distance between Win " + i + " and Win " + (i+1) + " " + d.showSummary());
+			log.status(LogLevel.VERBOSE, "====================\nWin"+ i + " had " + queryWindowList.get(i).getQueries().size()  + " queries, Distance between Win " + i + " and Win " + (i+lagBetweenPairsOfWindows) + " " + d.showSummary());
 		}
 		int last = queryWindowList.size()-lagBetweenPairsOfWindows;
 		log.status(LogLevel.VERBOSE, "====================\nWin"+ last + " had " + queryWindowList.get(last).getQueries().size()  + " queries");
@@ -137,6 +137,8 @@ public abstract class QueryLogAnalyzer <Q extends Query>{
 		for (int windowSizeInDays=1; windowSizeInDays<=31; ++windowSizeInDays) {
 			List<QueryWindow> windowsLists = splitIntoTimeEqualWindows(all_queries, windowSizeInDays);
 			DistributionDistance dist = measureAvgDistanceBetweenConsecutiveWindows(windowsLists);
+			if (dist == null)
+				break;
 			//System.out.println(windowSizeInDays + sep + dist.toString());
 			ps.println(windowSizeInDays + sep + dist.toString());
 		}

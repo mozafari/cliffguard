@@ -35,20 +35,16 @@ public class MicrosoftLatencyMeter extends LatencyMeter {
 
 	private MicrosoftDatabaseLoginConfiguration microsoftLogin;
 	private MicrosoftDeployer microsoftDeployer;
-	private Connection conn;
-	private Connection controlConn;
 
 	public MicrosoftLatencyMeter(LogLevel verbosity,
 			boolean emptyCacheForEachRun,
 			DatabaseLoginConfiguration databaseLogin,
 			ExperimentCache experimentCache, DatabaseInstance dbDeployment,
 			DBDeployer dbDeployer,
-			long howLongToWaitForEachQueryInSecondsBeforeConsideringItInfinite) {
+			long howLongToWaitForEachQueryInSecondsBeforeConsideringItInfinite) throws Exception {
 		super(verbosity, emptyCacheForEachRun, databaseLogin, experimentCache,
 				dbDeployment, dbDeployer,
 				howLongToWaitForEachQueryInSecondsBeforeConsideringItInfinite);
-		conn = MicrosoftConnection.createConnection(databaseLogin);
-		controlConn = MicrosoftConnection.createConnection(databaseLogin);
 		try {
 			microsoftDeployer = new MicrosoftDeployer(verbosity, databaseLogin, experimentCache, false);
 		} catch (Exception e) {
@@ -70,7 +66,7 @@ public class MicrosoftLatencyMeter extends LatencyMeter {
 		++numberOfCacheEmptying;
 		Timer t = new Timer();
 		
-		Statement stmt = conn.createStatement();
+		Statement stmt = queryConnection.createStatement();
 		String createCheckpoint = "CHECKPOINT";
 		String dropCleanBuffers = "DBCC DROPCLEANBUFFERS";
 		String dropPlanCache = "DBCC FREEPROCCACHE";
@@ -107,225 +103,9 @@ public class MicrosoftLatencyMeter extends LatencyMeter {
 		secondsSpentEmptyingCache += t.lapSeconds();
 	}
 
-	@Override
-	public void measureLatency(PerformanceRecord performanceRecord,
-			List<PhysicalStructure> whichStructuresToInclude,
-			String designAlgorithmName, int numberOfRepetitions,
-			boolean useExplainInsteadOfRunningQueries) throws Exception {
-
-		assert (numberOfRepetitions>=1);
-
-		String query = performanceRecord.getQuery();		
-		PerformanceValue performanceValue;
-		boolean needsAccurate = !useExplainInsteadOfRunningQueries;
-
-
-		if (experimentCache!=null && experimentCache.getPerformance(query, new PhysicalDesign(whichStructuresToInclude), needsAccurate) != null) {
-			performanceValue = experimentCache.getPerformance(query, new PhysicalDesign(whichStructuresToInclude), needsAccurate);
-			log.status(LogLevel.DEBUG, "performance value with this allowed projections fetched from cache.");
-			++numberOfCasesIdenticalWithPreviousCases;
-		} else {
-			Timer t1 = new Timer();
-			
-			Set<String> allDeployedStructureNames = microsoftDeployer.retrieveAllDeployedStructuresBaseNamesFromDB(conn);
-//			Set<String> excludeList = whatStructuresToExclude(whichStructuresToInclude);
-			Set<DeployedPhysicalStructure> deployedStructures = microsoftDeployer.retrieveDeployedStructuresFromDB(conn, allDeployedStructureNames, new HashSet<String>());
-//			Set<DeployedPhysicalStructure> deployedStructures = microsoftDeployer.getCurrentlyDeployedStructures();
-//			Set<MicrosoftDeployedPhysicalStructure> disabledStructures = new HashSet<MicrosoftDeployedPhysicalStructure>();
-
-			Set<DeployedPhysicalStructure> includeStructures = new HashSet<DeployedPhysicalStructure>();
-			Set<DeployedPhysicalStructure> excludeStructures = new HashSet<DeployedPhysicalStructure>();
-			List<PhysicalStructure> missingStructures = new ArrayList<PhysicalStructure>();
-
-			// DY: I know this is dumb way.. will fix later
-			for (PhysicalStructure p : whichStructuresToInclude) {
-				boolean isFound = false;
-				for (DeployedPhysicalStructure deployed : deployedStructures) {
-					if (p.equals(deployed.getStructure())) {
-						isFound = true;
-						break;
-					}
-				}
-				if (!isFound) {
-					missingStructures.add(p);
-				}
-			}
-
-			if (!missingStructures.isEmpty()) {
-				microsoftDeployer.deployDesign(missingStructures, false);
-				allDeployedStructureNames = microsoftDeployer.retrieveAllDeployedStructuresBaseNamesFromDB(conn);
-				deployedStructures = microsoftDeployer.retrieveDeployedStructuresFromDB(conn, allDeployedStructureNames, new HashSet<String>());
-			}
-
-			for (DeployedPhysicalStructure p : deployedStructures) {
-				if (whichStructuresToInclude.contains(p.getStructure())) {
-					includeStructures.add(p);
-				} else {
-					excludeStructures.add(p);
-				}
-			}
-//
-//			if (whichStructuresToInclude.size() != includeStructures.size()) {
-//				throw new Exception("# of structures to include are not matched.");
-//			}
-
-			log.status(LogLevel.DEBUG, String.format("Measuring latency: # structures to include = %d, exclude = %d, missing = %d, total # of structures = %d", 
-					includeStructures.size(), excludeStructures.size(), missingStructures.size(), deployedStructures.size()));
-
-			// disable indexes in the excludeList.
-			for (DeployedPhysicalStructure p : includeStructures) {
-				MicrosoftDeployedPhysicalStructure msp = (MicrosoftDeployedPhysicalStructure)p;
-				if (msp.isDisabled()) {
-					if (!msp.enableStructure(conn)) {
-						throw new Exception("Failed to enable a structure: " + msp.getName());
-					}
-				}
-			}
-			for (DeployedPhysicalStructure p : excludeStructures) {
-				MicrosoftDeployedPhysicalStructure msp = (MicrosoftDeployedPhysicalStructure)p;
-				if (!msp.isDisabled()) {
-					if (!msp.disableStructure(conn)) {
-						throw new Exception("Failed to enable a structure: " + msp.getName());
-					}
-				}
-			}
-
-//			for (DeployedPhysicalStructure p : deployedStructures) {
-//				if (excludeList.contains(p.getName())) {
-//					MicrosoftDeployedPhysicalStructure msp = (MicrosoftDeployedPhysicalStructure)p;
-//					if (!msp.isDisabled()) {
-//						if (!msp.disableStructure(conn)) {
-//							throw new Exception("Failed to disable a structure: " + msp.getName());
-//						}
-//					}
-//				} else {
-//					MicrosoftDeployedPhysicalStructure msp = (MicrosoftDeployedPhysicalStructure)p;
-//					if (msp.isDisabled()) {
-//						if (!msp.enableStructure(conn)) {
-//							throw new Exception("Failed to enable a structure: " + msp.getName());
-//						}
-//					}
-//				}
-//			}
-
-			// get first query plan.
-			Statement stmt = conn.createStatement();
-			stmt.executeUpdate("SET SHOWPLAN_ALL ON");
-			ResultSet rs = null;
-			try {
-				rs = stmt.executeQuery(query);
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.out.println("Query execution error:");
-				System.out.println(query);
-				throw e;
-			}
-			StringBuilder queryPlan = new StringBuilder();
-
-			// retrieve query plan.
-			while (rs.next()) {
-				queryPlan.append(rs.getString(1) + "\n");
-			}
-			rs.close();
-			stmt.executeUpdate("SET SHOWPLAN_ALL OFF");
-			stmt.close();
-			String theFirstQueryPlan = queryPlan.toString();
-
-			secondsSpentProducingQueryPlans += t1.lapSeconds();
-			if (experimentCache!=null && experimentCache.getPerformance(query, theFirstQueryPlan, needsAccurate) !=null) {
-				performanceValue = experimentCache.getPerformance(query, theFirstQueryPlan, needsAccurate);
-				log.status(LogLevel.DEBUG, "performance value with this query plan fetched from cache.");
-				++ numberOfCasesWithPreviouslySeenPlan;
-			} else {
-				Timer t2 = new Timer();
-				log.status(LogLevel.DEBUG, "performance value with this query plan was NOT found in cache.");
-
-				List<Long> allDurations = new ArrayList<Long>();
-				List<Long> allOptimizerCosts = new ArrayList<Long>();
-				List<String> allQueryPlans = new ArrayList<String>();
-				
-				Statement controlStmt = controlConn.createStatement();
-				
-				for (int rep = 0; rep < numberOfRepetitions; ++ rep) {
-					if (emptyCacheForEachRun) emptyCache();
-
-					stmt = conn.createStatement();
-					stmt.executeUpdate("SET SHOWPLAN_ALL ON");
-					rs = stmt.executeQuery(query);
-					queryPlan = new StringBuilder();
-
-					// retrieve query plan.
-					boolean firstRow = true;
-					long optimizedCostEstimate = 0;
-					while (rs.next()) {
-						queryPlan.append(rs.getString(1) + "\n");
-						if (firstRow) {
-							// this is not in milliseconds or anything. MSDN says it is 'internal unit of measure'.
-							// multiplied by 10,000,000 to make it significant.
-							optimizedCostEstimate = (long)(rs.getDouble("TotalSubtreeCost") * 10000000);
-							firstRow = false;
-						}
-					}
-					allOptimizerCosts.add(optimizedCostEstimate);
-					allQueryPlans.add(queryPlan.toString());
-					rs.close();
-					stmt.executeUpdate("SET SHOWPLAN_ALL OFF");
-
-					boolean failed = false;
-					String failureMessage = null;
-
-					if (!useExplainInsteadOfRunningQueries) {
-						log.status(LogLevel.DEBUG, "Executing: " + query);
-						try {
-							long duration = measureQueryLatencyInMilliSecondsWithTimeout(query, howLongToWaitForEachQueryInSecondsBeforeConsideringItInfinite, stmt, controlStmt, log);
-							allDurations.add(duration);
-						} catch (Exception e) {
-							failed = true;
-							failureMessage = e.getMessage();
-						}
-						
-//						if (failed) {
-//							// rollback disabled indexes.
-//							for (MicrosoftDeployedPhysicalStructure msp : disabledStructures) {
-//								msp.enableStructure(conn);
-//							}
-//							throw new Exception(failureMessage);
-//						}
-					}
-				} // end for
-				controlStmt.close();
-
-				for (String plan : allQueryPlans) {
-					if (!plan.toLowerCase().equals(theFirstQueryPlan.toLowerCase()))
-						log.error("Warning: diff query plans: " + plan + " and " + theFirstQueryPlan);
-				}
-
-				if (useExplainInsteadOfRunningQueries)
-					performanceValue = new PerformanceValue(theFirstQueryPlan, allOptimizerCosts);
-				else
-					performanceValue = new PerformanceValue(theFirstQueryPlan, allDurations, allOptimizerCosts);
-					
-				secondsSpentMeasuringQueryLatency += t2.lapSeconds();
-				++ numberOfCasesWithActualMeasuring;
-			} //end if
-
-			stmt.close();
-
-			if (experimentCache!=null)
-				experimentCache.cachePerformance(query, new PhysicalDesign(whichStructuresToInclude), needsAccurate, performanceValue);
-
-			// rollback disabled indexes.
-//			for (MicrosoftDeployedPhysicalStructure msp : disabledStructures) {
-//				msp.enableStructure(conn);
-//			}
-		} //end if
-
-		performanceRecord.record(designAlgorithmName, new PerformanceValueWithDesign(performanceValue, new PhysicalDesign(whichStructuresToInclude)));
-	}
-
 	private Set<String> whatStructuresToExclude(List<PhysicalStructure> structuresToInclude) throws Exception{
 
-		Set<String> allDeployedStructureNames = microsoftDeployer.retrieveAllDeployedStructuresBaseNamesFromDB(conn);
+		Set<String> allDeployedStructureNames = microsoftDeployer.retrieveAllDeployedStructuresBaseNamesFromDB(queryConnection);
 		Set<String> structureNamesToDeploy = new HashSet<String>();
 		Set<String> structureNamesToInclude = new HashSet<String>();
 		Set<MicrosoftIndex> missingIndexes = new HashSet<MicrosoftIndex>();
@@ -356,19 +136,19 @@ public class MicrosoftLatencyMeter extends LatencyMeter {
 		if (!missingIndexes.isEmpty()) {
 			Timer t = new Timer();
 			for (MicrosoftIndex index : missingIndexes) {
-				index.deploy(conn);
+				index.deploy(queryConnection);
 			}
 			secondsSpentWaitingForMissingStructuresToBeDeployed += t.lapSeconds();
 		}
 		if (!missingIndexedViews.isEmpty()) {
 			Timer t = new Timer();
 			for (MicrosoftIndexedView view : missingIndexedViews) {
-				view.deploy(conn);
+				view.deploy(queryConnection);
 			}
 			secondsSpentWaitingForMissingStructuresToBeDeployed += t.lapSeconds();
 		}
 
-		allDeployedStructureNames = microsoftDeployer.retrieveAllDeployedStructuresBaseNamesFromDB(conn);
+		allDeployedStructureNames = microsoftDeployer.retrieveAllDeployedStructuresBaseNamesFromDB(queryConnection);
 		for (String structureName : structureNamesToInclude) {
 			if (!allDeployedStructureNames.contains(structureName)) {
 //				throw new IllegalArgumentException("Somehow you still have a structure that is not deployed (even though we tried): " + structureName);
@@ -392,53 +172,104 @@ public class MicrosoftLatencyMeter extends LatencyMeter {
 		}
 		return structureMap;
 	}
+	
+	@Override
+	protected PlanEstimate getQueryPlanAndCostEstimate(String query, List<PhysicalStructure> physicalStructuresToInclude) throws Exception {
+		Statement stmt = queryConnection.createStatement();
+		stmt.executeUpdate("SET SHOWPLAN_ALL ON");
+		ResultSet rs = stmt.executeQuery(query);
+		 StringBuilder queryPlan = new StringBuilder();
 
-
+		// retrieve query plan.
+		boolean firstRow = true;
+		long optimizedCostEstimate = 0;
+		while (rs.next()) {
+			queryPlan.append(rs.getString(1) + "\n");
+			if (firstRow) {
+				// this is not in milliseconds or anything. MSDN says it is 'internal unit of measure'.
+				// multiplied by 10,000,000 to make it significant.
+				optimizedCostEstimate = (long)(rs.getDouble("TotalSubtreeCost") * 10000000);
+				firstRow = false;
+			}
+		}
+		rs.close();
+		stmt.executeUpdate("SET SHOWPLAN_ALL OFF");
+		stmt.close();
+		return new PlanEstimate(queryPlan.toString(), optimizedCostEstimate);
+	}
 
 	@Override
-	protected String returnQueryPlan(String query, PhysicalDesign physicalDesign)
+	protected String getQueryPlan(String query, List<PhysicalStructure> physicalStructuresToInclude)
 			throws Exception {
+		Set<String> allDeployedStructureNames = microsoftDeployer.retrieveAllDeployedStructuresBaseNamesFromDB(queryConnection);
+		Set<DeployedPhysicalStructure> deployedStructures = microsoftDeployer.retrieveDeployedStructuresFromDB(queryConnection, allDeployedStructureNames, new HashSet<String>());
+		Set<DeployedPhysicalStructure> includeStructures = new HashSet<DeployedPhysicalStructure>();
+		Set<DeployedPhysicalStructure> excludeStructures = new HashSet<DeployedPhysicalStructure>();
+		List<PhysicalStructure> missingStructures = new ArrayList<PhysicalStructure>();
 
-		List<PhysicalStructure> whichStructuresToInclude = 
-				Utils.convertPhysicalStructureSetIntoPhysicalList(physicalDesign.getPhysicalStructures());	
+		for (PhysicalStructure p : physicalStructuresToInclude) {
+			if (!deployedStructures.contains(p))
+				missingStructures.add(p);
+		}
 
-		Set<String> allDeployedStructureNames = microsoftDeployer.retrieveAllDeployedStructuresBaseNamesFromDB(conn);
-		Set<String> excludeList = whatStructuresToExclude(whichStructuresToInclude);
-		Set<DeployedPhysicalStructure> deployedStructures = microsoftDeployer.retrieveDeployedStructuresFromDB(conn, allDeployedStructureNames, new HashSet<String>());
-		Set<MicrosoftDeployedPhysicalStructure> disabledStructures = new HashSet<MicrosoftDeployedPhysicalStructure>();
+		if (!missingStructures.isEmpty()) {
+			microsoftDeployer.deployDesign(missingStructures, false);
+			allDeployedStructureNames = microsoftDeployer.retrieveAllDeployedStructuresBaseNamesFromDB(queryConnection);
+			deployedStructures = microsoftDeployer.retrieveDeployedStructuresFromDB(queryConnection, allDeployedStructureNames, new HashSet<String>());
+		}
+
+		for (DeployedPhysicalStructure p : deployedStructures) {
+			if (physicalStructuresToInclude.contains(p.getStructure())) {
+				includeStructures.add(p);
+			} else {
+				excludeStructures.add(p);
+			}
+		}
+
+		log.status(LogLevel.DEBUG, String.format("Measuring latency: # structures to include = %d, exclude = %d, missing = %d, total # of structures = %d", 
+				includeStructures.size(), excludeStructures.size(), missingStructures.size(), deployedStructures.size()));
 
 		// disable indexes in the excludeList.
-		for (DeployedPhysicalStructure p : deployedStructures) {
-			if (excludeList.contains(p.getName())) {
-				MicrosoftDeployedPhysicalStructure msp = (MicrosoftDeployedPhysicalStructure)p;
-				if (!msp.disableStructure(conn)) {
-					throw new Exception("Failed to disable a structure: " + msp.getName());
+		for (DeployedPhysicalStructure p : includeStructures) {
+			MicrosoftDeployedPhysicalStructure msp = (MicrosoftDeployedPhysicalStructure)p;
+			if (msp.isDisabled()) {
+				if (!msp.enableStructure(queryConnection)) {
+					throw new Exception("Failed to enable a structure: " + msp.getName());
 				}
-				disabledStructures.add(msp);
+			}
+		}
+		for (DeployedPhysicalStructure p : excludeStructures) {
+			MicrosoftDeployedPhysicalStructure msp = (MicrosoftDeployedPhysicalStructure)p;
+			if (!msp.isDisabled()) {
+				if (!msp.disableStructure(queryConnection)) {
+					throw new Exception("Failed to enable a structure: " + msp.getName());
+				}
 			}
 		}
 
 		// get first query plan.
-		Statement stmt = conn.createStatement();
+		Statement stmt = queryConnection.createStatement();
 		stmt.executeUpdate("SET SHOWPLAN_ALL ON");
-		ResultSet rs = stmt.executeQuery(query);
+		ResultSet rs = null;
+		try {
+			rs = stmt.executeQuery(query);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Query execution error:");
+			System.out.println(query);
+			throw e;
+		}
 		StringBuilder queryPlan = new StringBuilder();
 
 		// retrieve query plan.
 		while (rs.next()) {
 			queryPlan.append(rs.getString(1) + "\n");
 		}
+		
 		rs.close();
 		stmt.executeUpdate("SET SHOWPLAN_ALL OFF");
 		stmt.close();
-		String theFirstQueryPlan = queryPlan.toString();
-
-		// rollback disabled indexes.
-		for (MicrosoftDeployedPhysicalStructure msp : disabledStructures) {
-			msp.enableStructure(conn);
-		}
-
-		return theFirstQueryPlan;
+		return queryPlan.toString();
 	}
 
 	@Override
@@ -453,8 +284,8 @@ public class MicrosoftLatencyMeter extends LatencyMeter {
 			log.status(LogLevel.DEBUG, "query plan with this allowed projections fetched from cache.");			
 		} else { // we need to measure those!
 
-			Set<String> allDeployedStructureNames = microsoftDeployer.retrieveAllDeployedStructuresBaseNamesFromDB(conn);
-			Set<DeployedPhysicalStructure> deployedStructures = microsoftDeployer.retrieveDeployedStructuresFromDB(conn, allDeployedStructureNames, new HashSet<String>());
+			Set<String> allDeployedStructureNames = microsoftDeployer.retrieveAllDeployedStructuresBaseNamesFromDB(queryConnection);
+			Set<DeployedPhysicalStructure> deployedStructures = microsoftDeployer.retrieveDeployedStructuresFromDB(queryConnection, allDeployedStructureNames, new HashSet<String>());
 
 			Set<DeployedPhysicalStructure> includeStructures = new HashSet<DeployedPhysicalStructure>();
 			Set<DeployedPhysicalStructure> excludeStructures = new HashSet<DeployedPhysicalStructure>();
@@ -476,8 +307,8 @@ public class MicrosoftLatencyMeter extends LatencyMeter {
 
 			if (!missingStructures.isEmpty()) {
 				microsoftDeployer.deployDesign(missingStructures, false);
-				allDeployedStructureNames = microsoftDeployer.retrieveAllDeployedStructuresBaseNamesFromDB(conn);
-				deployedStructures = microsoftDeployer.retrieveDeployedStructuresFromDB(conn, allDeployedStructureNames, new HashSet<String>());
+				allDeployedStructureNames = microsoftDeployer.retrieveAllDeployedStructuresBaseNamesFromDB(queryConnection);
+				deployedStructures = microsoftDeployer.retrieveDeployedStructuresFromDB(queryConnection, allDeployedStructureNames, new HashSet<String>());
 			}
 
 			for (DeployedPhysicalStructure p : deployedStructures) {
@@ -492,7 +323,7 @@ public class MicrosoftLatencyMeter extends LatencyMeter {
 			for (DeployedPhysicalStructure p : includeStructures) {
 				MicrosoftDeployedPhysicalStructure msp = (MicrosoftDeployedPhysicalStructure)p;
 				if (msp.isDisabled()) {
-					if (!msp.enableStructure(conn)) {
+					if (!msp.enableStructure(queryConnection)) {
 						throw new Exception("Failed to enable a structure: " + msp.getName());
 					}
 				}
@@ -500,7 +331,7 @@ public class MicrosoftLatencyMeter extends LatencyMeter {
 			for (DeployedPhysicalStructure p : excludeStructures) {
 				MicrosoftDeployedPhysicalStructure msp = (MicrosoftDeployedPhysicalStructure)p;
 				if (!msp.isDisabled()) {
-					if (!msp.disableStructure(conn)) {
+					if (!msp.disableStructure(queryConnection)) {
 						throw new Exception("Failed to enable a structure: " + msp.getName());
 					}
 				}
@@ -518,7 +349,7 @@ public class MicrosoftLatencyMeter extends LatencyMeter {
 //			}
 
 			// get first query plan.
-			Statement stmt = conn.createStatement();
+			Statement stmt = queryConnection.createStatement();
 			stmt.executeUpdate("SET SHOWPLAN_ALL ON");
 			ResultSet rs = stmt.executeQuery(query);
 			StringBuilder queryPlan = new StringBuilder();

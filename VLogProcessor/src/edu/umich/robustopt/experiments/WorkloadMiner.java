@@ -89,7 +89,8 @@ public class WorkloadMiner {
 					", numberOFInitialWindowsToSkip=" + numberOFInitialWindowsToSkip + ", numberOfWindowsToRead=" + numberOfWindowsToRead);	
 
 		try {
-			List<DatabaseLoginConfiguration> allDatabaseConfigurations = DatabaseLoginConfiguration.loadDatabaseConfigurations(loginConfigFile, VerticaDatabaseLoginConfiguration.class.getSimpleName());
+			//List<DatabaseLoginConfiguration> allDatabaseConfigurations = DatabaseLoginConfiguration.loadDatabaseConfigurations(loginConfigFile, VerticaDatabaseLoginConfiguration.class.getSimpleName());
+			List<DatabaseLoginConfiguration> allDatabaseConfigurations = loadDatabaseLoginConfigurations(db_vendor, loginConfigFile);
 			Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMap(DBalias, allDatabaseConfigurations).getSchemas();
 
 			SqlLogFileManager<Query_SWGO> sqlLogFileManager = new SqlLogFileManager<Query_SWGO>('|', "\n", new Query_SWGO.QParser(), schemaMap);
@@ -108,6 +109,8 @@ public class WorkloadMiner {
 		           add(UnionOption.GROUP_BY);
 		           add(UnionOption.ORDER_BY);
 			}};
+			
+			new File(outputDirectory).mkdirs();
 			String logFile = outputDirectory + File.separator + "UnpartitionedQueryLogAnalyzer.log";
 			UnpartitionedQueryLogAnalyzer<Query_SWGO> analyzer = new UnpartitionedQueryLogAnalyzer<Query_SWGO>(new Query_SWGO.QParser(), sqlLogFileManager.getAll_queries(), 
 					new EuclideanDistanceWithSimpleUnion.Generator(schemaMap, penalty, option), logFile);

@@ -70,7 +70,7 @@ public class MicrosoftDatabaseLoginConfiguration extends
 							getDBhost(), getDBport(), getDBname()), getDBuser(), getDBpasswd());
 		} catch (Exception e) {
 			e.printStackTrace();
-			return null;
+			
 		}
 		return conn;
 	}

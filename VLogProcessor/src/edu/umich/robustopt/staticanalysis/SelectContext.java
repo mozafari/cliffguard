@@ -154,6 +154,7 @@ public class SelectContext {
 			} else {
 				// need to do a full search over all the schemas
 				for (Map.Entry<String, ISqlRelation> e : getRelations().entrySet()) {
+					//c.setTable(this.);
 					List<ColumnDescriptor> ret = tryResolveInRelation(c, e.getValue(), schemas);
 					if (ret != null)
 						// found

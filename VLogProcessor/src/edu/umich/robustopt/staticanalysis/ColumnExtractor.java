@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
 
@@ -96,11 +97,15 @@ public class ColumnExtractor {
 		SemanticAnalyzerVisitor semanticAnalyzer = new SemanticAnalyzerVisitor(schemas);
 		stmt.accept(semanticAnalyzer);
 		IdentityHashMap<PlainSelect, SelectContext> contexts = semanticAnalyzer.getSelectContexts();
-
+		for (Entry<PlainSelect, SelectContext> i : contexts.entrySet()) {
+			SelectContext a = i.getValue();
+			System.out.println(a);
+		}
 		ExtractorVisitor extractor = new ExtractorVisitor(contexts);
 		stmt.accept(extractor);
-
 		return extractor.getSummary();
+		
+		//return new Query_SWGO(contexts.);
 	}
 	
 }

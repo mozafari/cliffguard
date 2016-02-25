@@ -63,7 +63,16 @@ public class SchemaUtils {
 		if (!cacheDirForSchema.getParentFile().exists()) {
 			cacheDirForSchema.getParentFile().mkdirs();
 		}
-		DatabaseLoginConfiguration dbLogin = (dbLogins==null || dbLogins.isEmpty()? null : dbLogins.get(0));
+		// DatabaseLoginConfiguration dbLogin = (dbLogins==null || dbLogins.isEmpty()? null : dbLogins.get(0));
+		// A linear search should be performed rather than simply take the first element in the list
+
+		DatabaseLoginConfiguration dbLogin = null;
+		if (!(dbLogins==null||dbLogins.isEmpty()))
+			for (DatabaseLoginConfiguration login : dbLogins)
+				if (login.getDBalias().equals(dbName)) {
+					dbLogin = login;
+					break;
+				}
 
 		return GetSchemaMap(dbName, GlobalConfigurations.RO_BASE_CACHE_PATH + File.separator + dbName+".schema.ser", dbLogin);
 	}

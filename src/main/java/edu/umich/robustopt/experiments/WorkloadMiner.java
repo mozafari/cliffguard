@@ -90,6 +90,7 @@ public class WorkloadMiner {
 
 		try {
 		    //List<DatabaseLoginConfiguration> allDatabaseConfigurations = DatabaseLoginConfiguration.loadDatabaseConfigurations(loginConfigFile, VerticaDatabaseLoginConfiguration.class.getSimpleName());
+
 		        List<DatabaseLoginConfiguration> allDatabaseConfigurations = loadDatabaseLoginConfigurations(db_vendor, loginConfigFile);
 			Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMap(DBalias, allDatabaseConfigurations).getSchemas();
 

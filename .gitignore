@@ -14,3 +14,7 @@
 # Maven
 log/
 target/
+
+#CliffGuard
+out/
+*.bat

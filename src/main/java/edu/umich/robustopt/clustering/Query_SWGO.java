@@ -1,13 +1,8 @@
 package edu.umich.robustopt.clustering;
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import javafx.util.Pair;
+import java.io.IOException;
 
 import com.relationalcloud.tsqlparser.Parser;
 import com.relationalcloud.tsqlparser.loader.Schema;
@@ -19,6 +14,8 @@ import edu.umich.robustopt.staticanalysis.ColumnExtractor;
 import edu.umich.robustopt.util.NamedIdentifier;
 import edu.umich.robustopt.util.SchemaUtils;
 import edu.umich.robustopt.vertica.VerticaDatabaseLoginConfiguration;
+
+import org.cliffguard.sqlanalyzer.SQLAnalyzer;
 
 public class Query_SWGO extends Query {
 	private Set<ColumnDescriptor> select = null;
@@ -42,16 +39,16 @@ public class Query_SWGO extends Query {
 
 		for (ColumnDescriptor x : selectColumns)
 			select.add(x.clone());
-		
+
 		for (ColumnDescriptor x : fromColumns)
 			from.add(x.clone());
-		
+
 		for (ColumnDescriptor x : whereColumns)
 			where.add(x.clone());
-		
+
 		for (ColumnDescriptor x : groupByColumns)
 			group_by.add(x.clone());
-		
+
 		for (ColumnDescriptor x : orderByColumns)
 			order_by.add(x.clone());
 	}
@@ -62,40 +59,52 @@ public class Query_SWGO extends Query {
 
 	public Query_SWGO(Integer query_id, Date timestamp, Double latency, String sql, Map<String, Schema> schemaMap) throws CloneNotSupportedException, ParseException {
 		super(query_id, timestamp, latency, sql);
-		Parser p;
-		//try {
-			p = new Parser("public", null, sql);
-			Statement stmt = p.stmt;
-		 	ColumnExtractor ex = new ColumnExtractor(schemaMap);
-			Query_SWGO q = ex.getColumnSummary(stmt);
-			
-			Set<ColumnDescriptor> selectColumns = q.getSelect();
-			Set<ColumnDescriptor> fromColumns = q.getFrom();
-			Set<ColumnDescriptor> whereColumns = q.getWhere();
-			List<ColumnDescriptor> groupByColumns = q.getGroup_by();
-			List<ColumnDescriptor> orderByColumns = q.getOrder_by();
-			
+		// Parser p;
+		// try {
+			// p = new Parser("public", null, sql);
+			// Statement stmt = p.stmt;
+		 	// ColumnExtractor ex = new ColumnExtractor(schemaMap);
+			// Query_SWGO q = ex.getColumnSummary(stmt);
+			SQLAnalyzer p = new SQLAnalyzer();
+			String schemaName = "";
+			if (schemaMap.containsKey("public")) schemaName = "public";
+			else if (schemaMap.containsKey("dbo")) schemaName = "dbo";
+			assert schemaName != "";
+
+			try {
+				p.analyzeString(sql, SchemaUtils.toPlainMap(schemaMap.get(schemaName)));
+			}
+			catch (IOException e) {
+				System.out.println("fail to analyze statement '"+sql+"'");
+			}
+
+			Set<Pair<String, String>> selectColumnStrings = p.getSelectStats();
+			Set<Pair<String, String>> fromColumnStrings = p.getFromStats();
+			Set<Pair<String, String>> whereColumnStrings = p.getWhereStats();
+			List<Pair<String, String>> groupByColumnStrings = p.getGroupByStats();
+			List<Pair<String, String>> orderByColumnStrings = p.getOrderByStats();
+
 			select = new HashSet<ColumnDescriptor>();
 			from = new HashSet<ColumnDescriptor>();
 			where = new HashSet<ColumnDescriptor>();
 			group_by = new ArrayList<ColumnDescriptor>();
 			order_by = new ArrayList<ColumnDescriptor>();
 
-			for (ColumnDescriptor x : selectColumns)
-				select.add(x.clone());
-			
-			for (ColumnDescriptor x : fromColumns)
-				from.add(x.clone());
-			
-			for (ColumnDescriptor x : whereColumns)
-				where.add(x.clone());
-			
-			for (ColumnDescriptor x : groupByColumns)
-				group_by.add(x.clone());
-			
-			for (ColumnDescriptor x : orderByColumns)
-				order_by.add(x.clone());
-			
+			for (Pair<String, String> x : selectColumnStrings)
+				select.add(new ColumnDescriptor(schemaName, x.getKey(), x.getValue()));
+
+			for (Pair<String, String> x : fromColumnStrings)
+				from.add(new ColumnDescriptor(schemaName, x.getKey(), x.getValue()));
+
+			for (Pair<String, String> x : whereColumnStrings)
+				where.add(new ColumnDescriptor(schemaName, x.getKey(), x.getValue()));
+
+			for (Pair<String, String> x : groupByColumnStrings)
+				group_by.add(new ColumnDescriptor(schemaName, x.getKey(), x.getValue()));
+
+			for (Pair<String, String> x : orderByColumnStrings)
+				order_by.add(new ColumnDescriptor(schemaName, x.getKey(), x.getValue()));
+
 		/*} catch (ParseException e) {
 			System.err.println("query " + sql + " couldn't be parsed!");
 			e.printStackTrace();
@@ -103,10 +112,10 @@ public class Query_SWGO extends Query {
 	}
 
 	private static void Fill(Set<NamedIdentifier> buf, Collection<ColumnDescriptor> c) {
-		for (ColumnDescriptor cd : c) 
+		for (ColumnDescriptor cd : c)
 			buf.add(cd.getTableFullName());
 	}
-	
+
 	public Set<NamedIdentifier> extractTables() {
 		Set<NamedIdentifier> tables = new HashSet<NamedIdentifier>();
 		Fill(tables, select);
@@ -116,8 +125,8 @@ public class Query_SWGO extends Query {
 		Fill(tables, order_by);
 		return tables;
 	}
-	
-		
+
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -176,15 +185,15 @@ public class Query_SWGO extends Query {
 	public List<ColumnDescriptor> getGroup_by() {
 		return Collections.unmodifiableList(group_by);
 	}
-		
+
 	public List<ColumnDescriptor> getOrder_by() {
 		return Collections.unmodifiableList(order_by);
 	}
-	
+
 	public Set<ColumnDescriptor> getWhere() {
 		return Collections.unmodifiableSet(where);
-	}	
-	
+	}
+
 	public Set<ColumnDescriptor> getFrom() {
 		return Collections.unmodifiableSet(from);
 	}
@@ -198,7 +207,7 @@ public class Query_SWGO extends Query {
 	public boolean isEmpty() {
 		return select.isEmpty() && where.isEmpty() && group_by.isEmpty() && order_by.isEmpty();
 	}
-	
+
 	public static class QParser extends QueryParser<Query_SWGO> {
 		@Override
 		public Query_SWGO parse(Integer query_id, Date timestamp, Double latency, String sql, Map<String, Schema> schemaMap)
@@ -216,7 +225,7 @@ public class Query_SWGO extends Query {
 			return queries;
 		}
 	}
-	
+
 	public static void main(String args[]) throws Exception {
 		Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMapFromDefaultSources("wide", VerticaDatabaseLoginConfiguration.class.getSimpleName()).getSchemas();
 

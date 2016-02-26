@@ -73,11 +73,16 @@
       <artifactId>commons-math</artifactId>
       <version>2.1</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.4</version>
+    </dependency>
 
     <!-- external dependencies -->
     <dependency>
-      <groupId>org.cliffguard.sqlanalzyer</groupId>
-      <artifactId>sqlanalzyer</artifactId>
+      <groupId>org.cliffguard.sqlanalyzer</groupId>
+      <artifactId>sqlanalyzer</artifactId>
       <version>0.2.0</version>
     </dependency>
     <dependency>
@@ -124,13 +129,15 @@
 	    <exclude>edu/umich/robustopt/preprocessing/FilterIgnoredQueries.java</exclude>
 	    <exclude>edu/umich/robustopt/clustering/Query_v1.java</exclude>
 	  </excludes>
-	</configuration>
+      <source>1.6</source>
+      <target>1.6</target>
+    </configuration>
       </plugin>
       
       <!-- generation of target/VLogProcessor.jar -->
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
-	<executions>
+        <executions>
           <execution>
             <phase>package</phase>
             <goals>

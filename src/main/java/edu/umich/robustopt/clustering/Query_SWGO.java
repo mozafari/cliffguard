@@ -1,21 +1,18 @@
 package edu.umich.robustopt.clustering;
-import java.sql.Connection;
 import java.util.*;
 import javafx.util.Pair;
 import java.io.IOException;
 
-import com.relationalcloud.tsqlparser.Parser;
+//import com.relationalcloud.tsqlparser.Parser;
 import com.relationalcloud.tsqlparser.loader.Schema;
 import com.relationalcloud.tsqlparser.parser.ParseException;
-import com.relationalcloud.tsqlparser.statement.Statement;
 
 import edu.umich.robustopt.staticanalysis.ColumnDescriptor;
-import edu.umich.robustopt.staticanalysis.ColumnExtractor;
 import edu.umich.robustopt.util.NamedIdentifier;
 import edu.umich.robustopt.util.SchemaUtils;
 import edu.umich.robustopt.vertica.VerticaDatabaseLoginConfiguration;
 
-import org.cliffguard.sqlanalyzer.SQLAnalyzer;
+import edu.umich.robustopt.staticanalysis.SQLQueryAnalyzer;
 
 public class Query_SWGO extends Query {
 	private Set<ColumnDescriptor> select = null;
@@ -65,7 +62,7 @@ public class Query_SWGO extends Query {
 			// Statement stmt = p.stmt;
 		 	// ColumnExtractor ex = new ColumnExtractor(schemaMap);
 			// Query_SWGO q = ex.getColumnSummary(stmt);
-			SQLAnalyzer p = new SQLAnalyzer();
+			SQLQueryAnalyzer p = new SQLQueryAnalyzer();
 			String schemaName = "";
 			if (schemaMap.containsKey("public")) schemaName = "public";
 			else if (schemaMap.containsKey("dbo")) schemaName = "dbo";

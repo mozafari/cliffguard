@@ -50,22 +50,25 @@ public class ColumnDescriptor implements Serializable, Cloneable {
 
 	private String getColumnCaseSensitiveName() {
 		if (columnName==null) return null;
-		if (SystemUtils.IS_OS_WINDOWS)
-			return columnName.toUpperCase();
-		else if (SystemUtils.IS_OS_LINUX)
-			return columnName;
-		assert false;
-		return null;
+		//if (SystemUtils.IS_OS_WINDOWS)
+		// item 5.2.21 in ANSI, ISO, IEC, SQL standard shows that a name for
+		// table or column should be normalized to all-uppercase form
+		// during resolution.
+		return columnName.toUpperCase();
+		//else if (SystemUtils.IS_OS_LINUX)
+		//	return columnName;
+		//assert false;
+		//return null;
 	}
 
 	private String getTableCaseSensitiveName() {
 		if (tableName==null) return null;
-		if (SystemUtils.IS_OS_WINDOWS)
-			return tableName.toUpperCase();
-		else if (SystemUtils.IS_OS_LINUX)
-			return tableName;
-		assert false;
-		return null;
+		//if (SystemUtils.IS_OS_WINDOWS)
+		return tableName.toUpperCase();
+		//else if (SystemUtils.IS_OS_LINUX)
+		//	return tableName;
+		//assert false;
+		//return null;
 	}
 	@Override
 	public String toString() {
@@ -74,8 +77,6 @@ public class ColumnDescriptor implements Serializable, Cloneable {
 
 	@Override
 	public int hashCode() {
-		// http://stackoverflow.com/a/2009011/2497530 shows that the case-sensitivity of
-		// table and column names are depended on file system we use.
 
 		String columnString = getColumnCaseSensitiveName();
 		String tableString = getTableCaseSensitiveName();

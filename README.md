@@ -4,14 +4,14 @@ Author: Barzan Mozafari (mozafari@umich.edu)
 [http://cliffguard.org](http://cliffguard.org)
 
 Table of Contents:
-     About CliffGuard
-     List of Tools
-     Usage Guide: WorkloadMiner
-     Usage Guide: CliffGuard Designer
-     Usage Guide: Scrubber
-     Usage Guide: VTester
-     Miscellaneous
-     License
++ About CliffGuard
++ List of Tools
++ Usage Guide: WorkloadMiner
++ Usage Guide: CliffGuard Designer
++ Usage Guide: Scrubber
++ Usage Guide: VTester
++ Miscellaneous
++ License
 
 ## About CliffGuard
 
@@ -83,22 +83,37 @@ Note: deployer_db_alias and designer_db_aliass can be the same. These values are
 Usage:
 
 ```bash
-java -cp CliffGuard.jar edu.umich.robustopt.experiments.WorkloadMiner db_vendor db_name db_login_file query_file output_dir output_dir [window_size_in_days number_of_initial_windows_to_skip number_of_windows_to_read]
+java -cp CliffGuard.jar edu.umich.robustopt.experiments.WorkloadMiner schema_file query_file output_dir [window_size_in_days number_of_initial_windows_to_skip number_of_windows_to_read]
 ```
 parameter description:
+	
++ schema_file: a file describing the schema of the parsed query file in form of data definition language(DDL).
 
-+ db_vendor: either 'vertica' or 'microsoft' (without quotations)
+	For example:
+```SQL
+CREATE TABLE Station (
+ID INT PRIMARY KEY,
+CITY CHAR(20),
+STATE CHAR(2),
+LAT_N REAL,
+LONG_W REAL
+);
 
-+ db_alias: the short name of the database (e.g., tpch, employmentInfo). This is the ID associated to the target database in the 
-db_login_file. In other words, the db_alias is used to find the appropriate login information from db_login_file
-
-+ db_login_file: an xml file with the login information (see databases.conf as an example)
-
+CREATE TABLE STATS
+(ID INTEGER REFERENCES STATION(ID),
+MONTH INTEGER CHECK (MONTH BETWEEN 1 AND 12),
+TEMP_F REAL CHECK (TEMP_F BETWEEN -80 AND 150),
+RAIN_I REAL CHECK (RAIN_I BETWEEN 0 AND 100),
+PRIMARY KEY (ID, MONTH)
+);
+```
 + query_file: a CSV file (using | as separators) with timestamp followed by a single query in each line
 
 	For example: 
+```
 	2011-12-14 19:38:51|select avg(salary) from employee
 	2011-12-14 19:38:51|commit
+```
 
 + output_dir: an empty directory to store the output of the analysis
 
@@ -107,8 +122,6 @@ db_login_file. In other words, the db_alias is used to find the appropriate logi
 + number_of_initial_windows_to_skip: to account for early stages of the database lifetime when few query had run. Default:0 
 
 + number_of_windows_to_read: to control the total number windows to analyze (choose -1 to read all windows of queries). Default: -1
-
-
 
 
 ### VTester

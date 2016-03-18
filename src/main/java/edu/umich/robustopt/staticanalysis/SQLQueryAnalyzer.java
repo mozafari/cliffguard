@@ -77,5 +77,6 @@ public class SQLQueryAnalyzer {
         return res;
     }
 
+    public boolean hasUnresolvedColumn() { return analyzer.hasUnresolvedSymbol(); }
     private TSQLSelectStmtListener analyzer;
 }

@@ -24,7 +24,7 @@ For more documentations and information visit [http://cliffguard.org](http://cli
 CliffGuard currently supports the following database management systems:
 
 - HP Vertica (Version 6.x.x and Version 7.x.x)
-- Microsoft SQL Server (Developer Edition and Enterprise Edition)
+- Microsoft SQL Server 2008+
 
 ## List of Tools
 

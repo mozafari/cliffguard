@@ -21,6 +21,7 @@ import edu.umich.robustopt.common.BLog.LogLevel;
 import edu.umich.robustopt.dblogin.DBInvoker;
 import edu.umich.robustopt.dblogin.DatabaseLoginConfiguration;
 import edu.umich.robustopt.dblogin.SchemaDescriptor;
+import edu.umich.robustopt.staticanalysis.SQLSchemaAnalyzer;
 
 
 public class SchemaUtils {
@@ -96,6 +97,26 @@ public class SchemaUtils {
 		return new SchemaDescriptor(conn, schemaMap);
 	}
 
+	public static SchemaDescriptor GetSchemaMap(File schemaFile) throws IOException {
+		if (!schemaFile.isFile()) return null;
+		SQLSchemaAnalyzer analyzer = new SQLSchemaAnalyzer();
+		analyzer.analyzeFile(schemaFile);
+		Map<String, Set<String>> schemaPlainMap = analyzer.getPlainSchemaMap();
+
+		Map<String, Schema> schemaMap = new HashMap<>();
+
+		Schema schema = new Schema();
+
+		for (Map.Entry<String, Set<String>> entry : schemaPlainMap.entrySet()) {
+			SchemaTable table = new SchemaTable(SchemaUtils.defaultSchemaName, entry.getKey());
+			entry.getValue().forEach(table::addColumn);
+			schema.addTable(table);
+		}
+		schemaMap.put(SchemaUtils.defaultSchemaName, schema);
+
+		return new SchemaDescriptor(null, schemaMap);
+	}
+
 	public static Map<String, Schema> GetTPCHSchema() {
 		// XXX: hard-coded for now
 /*
@@ -157,4 +178,5 @@ public class SchemaUtils {
 		return res;
 	}
 
+	static final public String defaultSchemaName = "public";
 }

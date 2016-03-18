@@ -1,6 +1,6 @@
 package edu.umich.robustopt.staticanalysis;
 
-import javafx.util.Pair;
+import edu.umich.robustopt.util.Pair;
 import edu.umich.robustopt.staticanalysis.Antlr4TSQLAnalyzerParser.*;
 
 import java.util.*;
@@ -100,7 +100,7 @@ public class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
                         matchedColumn = k;
                         countMatches++;
                     }
-                    assert countMatches<=1;
+                    if (countMatches>1) return null;
                 }
             }
             else {
@@ -113,7 +113,7 @@ public class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
                     }
                     if (countMatches==2)
                         System.out.println(c.toString());
-                    assert countMatches<=1;
+                    if (countMatches>1) return null;
                 }
             }
             return matchedColumn;
@@ -131,7 +131,7 @@ public class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
                     return;
                 }
             }
-            assert(false);
+            unresolvedSymbols.add(c);
         }
         public void resolveAll(Collection<ColumnInfo> c) {
             c.stream().forEach(x -> resolveName(x));
@@ -336,6 +336,8 @@ public class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
             this.schemas.put(i.toLowerCase(), schemas.get(i));
     }
 
+    public boolean hasUnresolvedSymbol() { return !unresolvedSymbols.isEmpty(); }
+
     public Deque<List<QueryInfo>> getQueryGroups() { return postOrderQueryGroups; }
 
     private Map<String, Set<String>> schemas = new HashMap<String, Set<String>>();
@@ -349,9 +351,9 @@ public class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
     private List<ColumnInfo> lastDerivedSymbols = new ArrayList<ColumnInfo>();
     private ColumnInfo lastUnaliasedColumn;
     private QueryInfo lastResolvedQuery;
+    private List<ColumnInfo> unresolvedSymbols = new ArrayList<>();
 
     private int nestedLevel = 0;
 
-    // TODO: column_alias = "column" actually unsupported in ISO standard
-    // TODO: tables with schema names
+    // TODO: tables with schema names?
 }

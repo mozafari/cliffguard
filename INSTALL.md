@@ -25,7 +25,7 @@ $ mvn clean compile package
 After this step, the binary file (a JAR file) will be created in
 
 ```
-./target/VLogProcessor.jar
+./target/CliffGuard.jar
 ```
 
 At this point, CliffGuard has been successfully compiled.

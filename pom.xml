@@ -184,7 +184,7 @@
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
-          <finalName>VLogProcessor</finalName>
+          <finalName>CliffGuard</finalName>
           <appendAssemblyId>false</appendAssemblyId>
         </configuration>
       </plugin>

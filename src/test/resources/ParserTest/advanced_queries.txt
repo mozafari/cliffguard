@@ -1,0 +1,24 @@
+select s.sname from Sailors S, Reserves R where S.sid = R.sid AND R.bid = 103;
+select S.sname, S.rating+1 AS rating from Sailors S, Reserves R1, Reserves R2
+where S.sid=R1.sid and S.sid=R2.sid and R1.rday=R2.rday and R1.bid<>R2.bid;
+select S.sname from Sailors S join Reserves R on S.sid = R.sid where R.bid = 103;
+select S.sname from sailors S, Reserves R, Boats B where S.sid = R.sid and R.bid = B.bid
+and B.color = 'red'
+UNION
+select S.sname from Sailors S, Reserves R, Boats B
+where S.sid = R.sid and R.bid = B.bid and B.color = 'green';
+
+select S.sname from Sailors S where S.sid in
+(select R.sid from Reserves R where R.bid = 103);
+
+select S.sname
+from Sailors S,
+(select S.sid
+from Sailors S, Reserves R, Boats B
+where S.sid = R.sid and R.bid = B.bid and B.color = 'red'
+intersect
+select S.sid
+from Sailors S, Reserves R, Boats B
+where S.sid = R.sid and R.bid = B.bid and B.color = 'green')
+RedGreenSailors
+where S.sid = RedGreenSailors.sid;

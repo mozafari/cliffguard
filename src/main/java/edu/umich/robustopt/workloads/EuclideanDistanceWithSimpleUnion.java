@@ -174,7 +174,7 @@ public class EuclideanDistanceWithSimpleUnion extends EuclideanDistance {
 				query = (Query_SWGO)q;
 			}
 
-			Set<ColumnDescriptor> columnsInClausesOfConcern = new HashSet<ColumnDescriptor>(); 
+ 			Set<ColumnDescriptor> columnsInClausesOfConcern = new HashSet<ColumnDescriptor>();
 			if (whichClauses.contains(UnionOption.SELECT))
 				columnsInClausesOfConcern.addAll(query.getSelect());
 			if (whichClauses.contains(UnionOption.WHERE))
@@ -189,6 +189,7 @@ public class EuclideanDistanceWithSimpleUnion extends EuclideanDistance {
 			int numberOfMatchingColumns = 0;
 			for (int i = 0; i < numberOfColumns; i++){
 				ColumnDescriptor column = dbColumns.get(i);
+
 				if (columnsInClausesOfConcern.contains(column)){
 					result.add(true);
 					++ numberOfMatchingColumns;

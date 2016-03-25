@@ -18,6 +18,7 @@ import edu.umich.robustopt.common.BLog;
 import edu.umich.robustopt.common.BLog.LogLevel;
 import edu.umich.robustopt.dblogin.DatabaseLoginConfiguration;
 import edu.umich.robustopt.microsoft.MicrosoftDatabaseLoginConfiguration;
+import edu.umich.robustopt.staticanalysis.SQLSchemaAnalyzer;
 import edu.umich.robustopt.util.SchemaUtils;
 import edu.umich.robustopt.util.Timer;
 import edu.umich.robustopt.vertica.VerticaDatabaseLoginConfiguration;
@@ -81,17 +82,16 @@ public class WorkloadMiner {
 
 		return allDatabaseConfigurations;
 	}
-	
-	public static void deriveInsight (String loginConfigFile, String db_vendor, String DBalias, String outputDirectory, String inputTimestampedQueryLogFile,
+
+	public static void deriveInsight (Map<String, Schema> schemaMap, String outputDirectory, String inputTimestampedQueryLogFile,
 								int numberOfDaysInEachWindow, int numberOFInitialWindowsToSkip, int numberOfWindowsToRead) throws Exception {
 		if (numberOfDaysInEachWindow<1 || numberOFInitialWindowsToSkip <0 || (numberOfWindowsToRead<1 && numberOfWindowsToRead!=-1))
 			throw new Exception("Invalid arguments: " + "numberOfDaysInEachWindow=" + numberOfDaysInEachWindow + 
 					", numberOFInitialWindowsToSkip=" + numberOFInitialWindowsToSkip + ", numberOfWindowsToRead=" + numberOfWindowsToRead);	
 
 		try {
-		    //List<DatabaseLoginConfiguration> allDatabaseConfigurations = DatabaseLoginConfiguration.loadDatabaseConfigurations(loginConfigFile, VerticaDatabaseLoginConfiguration.class.getSimpleName());
-		        List<DatabaseLoginConfiguration> allDatabaseConfigurations = loadDatabaseLoginConfigurations(db_vendor, loginConfigFile);
-			Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMap(DBalias, allDatabaseConfigurations).getSchemas();
+			//List<DatabaseLoginConfiguration> allDatabaseConfigurations = loadDatabaseLoginConfigurations(db_vendor, loginConfigFile);
+			//Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMap(DBalias, allDatabaseConfigurations).getSchemas();
 
 			SqlLogFileManager<Query_SWGO> sqlLogFileManager = new SqlLogFileManager<Query_SWGO>('|', "\n", new Query_SWGO.QParser(), schemaMap);
 			
@@ -145,12 +145,12 @@ public class WorkloadMiner {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		String db_vendor; // vertica or microsoft
-		String dbAlias;
+		//String db_vendor; // vertica or microsoft
+		//String dbAlias;
 		String outputDirectory;
 		String inputTimestampedQueryLogFile;
 		String homeDir = System.getProperty("user.home");
-		String database_login_file = homeDir + File.separator + "databases.conf"; 
+		//String database_login_file = homeDir + File.separator + "databases.conf";
 		int numberOfDaysInEachWindow = 7;
 		int numberOFInitialWindowsToSkip = 0;
 		int numberOfWindowsToRead = -1;
@@ -172,19 +172,20 @@ public class WorkloadMiner {
 		
 
 		
-		if (args.length !=8 && args.length!=5) {
+		if (args.length !=6 && args.length!=3) {
 			log.error(usageMessage);
 			return;
 		} 
 		// we have the right number of parameters
 		int idx = 0;
-		db_vendor = args[idx++]; db_vendor = db_vendor.toLowerCase();
-		assert db_vendor.equals("vertica") || db_vendor.equals("microsoft");
-		dbAlias = args[idx++];
-		database_login_file = args[idx++];
+		//db_vendor = args[idx++]; db_vendor = db_vendor.toLowerCase();
+		String schemaFileName = args[idx++];
+		//assert db_vendor.equals("vertica") || db_vendor.equals("microsoft");
+		//dbAlias = args[idx++];
+		//database_login_file = args[idx++];
 		inputTimestampedQueryLogFile = args[idx++];
 		outputDirectory = args[idx++];
-		if (args.length == 8) {
+		if (args.length == 6) {
 			numberOfDaysInEachWindow = Integer.parseInt(args[idx++]);
 			assert numberOfDaysInEachWindow>0;
 			numberOFInitialWindowsToSkip  = Integer.parseInt(args[idx++]);
@@ -194,9 +195,9 @@ public class WorkloadMiner {
 		}
 			
 		log.status(LogLevel.STATUS, "Running with the following parameters:\n"
-				+ "db_vendor=" + db_vendor
-				+ "\ndb_alias=" + dbAlias
-				+ "\ndb_login_file="+ database_login_file
+				//+ "db_vendor=" + db_vendor
+				//+ "\ndb_alias=" + dbAlias
+				//+ "\ndb_login_file="+ database_login_file
 				+ "\nquery_file="+ inputTimestampedQueryLogFile
 				+ "\noutput_dir =" + outputDirectory
 				+ "\nwindow_size_in_days=" + numberOfDaysInEachWindow
@@ -207,7 +208,8 @@ public class WorkloadMiner {
 	
 		
 		Timer t = new Timer();
-		deriveInsight(database_login_file, db_vendor, dbAlias, outputDirectory, inputTimestampedQueryLogFile, numberOfDaysInEachWindow, numberOFInitialWindowsToSkip, numberOfWindowsToRead);
+		File schemaFile = new File(schemaFileName);
+		deriveInsight(SchemaUtils.GetSchemaMap(schemaFile).getSchemas(), outputDirectory, inputTimestampedQueryLogFile, numberOfDaysInEachWindow, numberOFInitialWindowsToSkip, numberOfWindowsToRead);
 		System.out.println("Mining your workload took " + t.lapMinutes() + " minutes!");
 		
 		log.status(LogLevel.STATUS, "DONE.");

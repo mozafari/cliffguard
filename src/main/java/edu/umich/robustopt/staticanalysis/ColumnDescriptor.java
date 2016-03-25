@@ -2,6 +2,7 @@ package edu.umich.robustopt.staticanalysis;
 
 import java.io.Serializable;
 
+import org.apache.commons.lang3.SystemUtils;
 import edu.umich.robustopt.util.NamedIdentifier;
 
 public class ColumnDescriptor implements Serializable, Cloneable {
@@ -47,6 +48,28 @@ public class ColumnDescriptor implements Serializable, Cloneable {
 		return schemaName + "." + tableName + "." + columnName;
 	}
 
+	private String getColumnCaseSensitiveName() {
+		if (columnName==null) return null;
+		//if (SystemUtils.IS_OS_WINDOWS)
+		// item 5.2.21 in ANSI, ISO, IEC, SQL standard shows that a name for
+		// table or column should be normalized to all-uppercase form
+		// during resolution.
+		return columnName.toUpperCase();
+		//else if (SystemUtils.IS_OS_LINUX)
+		//	return columnName;
+		//assert false;
+		//return null;
+	}
+
+	private String getTableCaseSensitiveName() {
+		if (tableName==null) return null;
+		//if (SystemUtils.IS_OS_WINDOWS)
+		return tableName.toUpperCase();
+		//else if (SystemUtils.IS_OS_LINUX)
+		//	return tableName;
+		//assert false;
+		//return null;
+	}
 	@Override
 	public String toString() {
 		return "ColumnDescriptor [" + schemaName + "." + tableName + "." + columnName + "]";
@@ -54,19 +77,23 @@ public class ColumnDescriptor implements Serializable, Cloneable {
 
 	@Override
 	public int hashCode() {
+
+		String columnString = getColumnCaseSensitiveName();
+		String tableString = getTableCaseSensitiveName();
 		final int prime = 31;
 		int result = 1;
 		result = prime * result
-				+ ((columnName == null) ? 0 : columnName.hashCode());
+				+ (columnString==null? 0 : columnString.hashCode());
 		result = prime * result
 				+ ((schemaName == null) ? 0 : schemaName.hashCode());
 		result = prime * result
-				+ ((tableName == null) ? 0 : tableName.hashCode());
+				+ (tableString==null? 0 : tableString.hashCode());
 		return result;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
+		// TODO two private inner class ColumnNameString and TableNameString would be helpful
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -74,20 +101,26 @@ public class ColumnDescriptor implements Serializable, Cloneable {
 		if (getClass() != obj.getClass())
 			return false;
 		ColumnDescriptor other = (ColumnDescriptor) obj;
-		if (columnName == null) {
-			if (other.columnName != null)
+
+		String columnString = getColumnCaseSensitiveName();
+		String tableString = getTableCaseSensitiveName();
+		String otherColumnString = other.getColumnCaseSensitiveName();
+		String otherTableString = other.getTableCaseSensitiveName();
+
+		if (columnString == null) {
+			if (otherColumnString != null)
 				return false;
-		} else if (!columnName.equals(other.columnName))
+		} else if (!columnString.equals(otherColumnString))
 			return false;
 		if (schemaName == null) {
 			if (other.schemaName != null)
 				return false;
 		} else if (!schemaName.equals(other.schemaName))
 			return false;
-		if (tableName == null) {
-			if (other.tableName != null)
+		if (tableString == null) {
+			if (otherTableString != null)
 				return false;
-		} else if (!tableName.equals(other.tableName))
+		} else if (!tableString.equals(otherTableString))
 			return false;
 		return true;
 	}

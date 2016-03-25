@@ -1,0 +1,25 @@
+CREATE TABLE sailors (
+sid integer not null,
+sname varchar(32),
+rating integer,
+age real,
+CONSTRAINT sailors PRIMARY KEY(sid)
+);
+
+CREATE TABLE reserves (
+sid integer not null,
+bid integer not null,
+day datetime not null,
+CONSTRAINT PK_reserves
+PRIMARY KEY(sid, bid, day),
+FOREIGN KEY (sid) REFERENCES sailors(sid),
+FOREIGN KEY (bid)
+REFERENCES boats(bid)
+);
+
+create table boats(
+bid integer,
+bname varchar(30),
+color varchar(10),
+primary key(bid)
+);

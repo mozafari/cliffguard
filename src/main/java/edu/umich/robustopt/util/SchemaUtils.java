@@ -9,10 +9,8 @@ import java.io.ObjectOutputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 
 import com.relationalcloud.tsqlparser.loader.Schema;
 import com.relationalcloud.tsqlparser.loader.SchemaLoader;
@@ -38,7 +36,7 @@ public class SchemaUtils {
 		} catch (ClassNotFoundException e) {
 
 		} catch (IOException e) {
-			
+
 		}
 		return schemaMap;
 	}
@@ -57,7 +55,7 @@ public class SchemaUtils {
 		return GetSchemaMap(dbName, GlobalConfigurations.RO_BASE_CACHE_PATH + "/" + dbName+".schema.ser", dbLogin);
 	}
 
-	
+
 	public static SchemaDescriptor GetSchemaMap(String dbName, List<DatabaseLoginConfiguration> dbLogins) throws Exception {
 		File cacheDirForSchema = new File(GlobalConfigurations.RO_BASE_CACHE_PATH + File.separator + dbName + ".schema.ser");
 		if (!cacheDirForSchema.getParentFile().exists()) {
@@ -90,14 +88,14 @@ public class SchemaUtils {
 			// save to file
 			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(schemaCacheFile));
 			oos.writeObject(schemaMap);
-			oos.close();				
+			oos.close();
 		} else {
 			System.out.println("Read schema map from file");
 		}
 
 		return new SchemaDescriptor(conn, schemaMap);
 	}
-	
+
 	public static Map<String, Schema> GetTPCHSchema() {
 		// XXX: hard-coded for now
 /*
@@ -123,7 +121,7 @@ public class SchemaUtils {
 		-- delete the dummy value we inserted
 		truncate table LINEITEM;
 */
-		
+
 		SchemaTable t = new SchemaTable("public", "lineitem");
 		t.addColumn("l_orderkey", "INTEGER");
 		t.addColumn("l_partkey", "INTEGER");
@@ -141,15 +139,22 @@ public class SchemaUtils {
 		t.addColumn("l_shipinstruct", "CHAR(25)");
 		t.addColumn("l_shipmode", "CHAR(10)");
 		t.addColumn("l_comment", "VARCHAR(44)");
-		
-		Schema s = new Schema();		
+
+		Schema s = new Schema();
 		s.addTable(t);
-		
+
 		Map<String, Schema> ret = new HashMap<String, Schema>();
 		ret.put("public", s);
 		return ret;
 	}
-	
 
+	public static Map<String, Set<String>> toPlainMap(Schema tsqlSchema) {
+		Map<String, Set<String>> res = new HashMap<String, Set<String>>();
+		for (String tableName : tsqlSchema.getAllTables()) {
+			Vector<String> columns = tsqlSchema.getTable(tableName).getColumns();
+			res.put(tableName, new HashSet<String>(columns));
+		}
+		return res;
+	}
 
 }

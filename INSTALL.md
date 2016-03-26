@@ -7,26 +7,25 @@ Table of Contents:
 
 ## Requirements
 
-- Oracle JDK 8+ / OpenJDK 1.8+
+- One of Oracle JDK 1.8+ or OpenJDK 8+
 - Maven 3.2.0+
-- Vertica 6+ / Microsoft SQL Server XX (only necessary for using the designer tool)
-- SWIG and GLPK (only for developers)
+- Vertica 6+ or Microsoft SQL Server 2008+ (only necessary for using the designer tool)
+- SWIG 3.0.0+ and GLPK 4.56+ (only for developers)
 
 ## Installation
 
 Attention: Before you install cliffguard, make sure $JAVA_HOME is set.
 
-Untar the package, then:
-
 ```bash
-$ cd TOP_LEVEL_DIRECTORY
+$ git clone https://github.com/mozafari/cliffguard.git
+$ cd cliffguard
 $ mvn clean compile package
 ```
 
 After this step, the binary file (a JAR file) will be created in
 
 ```
-TOP_LEVEL_DIRECTORY/target/VLogProcessor.jar
+./target/CliffGuard.jar
 ```
 
 At this point, CliffGuard has been successfully compiled.
@@ -74,10 +73,12 @@ and see if it prints out root!
 
 #### Requirements
 
-- Eclipse LUNA+
+- Eclipse (Luna or Mars version are recommended)
 - m2eclipse plugin for Eclipse
 
 If you are not sure about installation of m2eclipse, check out Help -> Install New Software, then copy the link [http://download.eclipse.org/technology/m2e/releases](http://download.eclipse.org/technology/m2e/releases) into "Work with" input box, then press "Add" -> "OK", and check "Maven Integration for Eclipse" in the following list view. Then press "Next" -> "Next" -> "Finish".
+
+Note: For Eclipse Juno and Kepler users, the link [http://download.eclipse.org/technology/m2e/releases/1.4](http://download.eclipse.org/technology/m2e/releases) should be copied into "Work with" input box.
 
 #### How to set up the project into Eclipse
 

@@ -228,6 +228,7 @@ public class SqlLogFileManager<Q extends Query>{
 				//log.status(LogLevel.VERBOSE, "summarized as: " + query.toString());			 
 			} catch (Throwable t) {
 				//log.error(input_query_log + " query number: " + lineNumber + "; message: " + t.getMessage());
+				System.out.println(t);
 				++ number_of_ignored_by_parser;
 				continue;
 			}

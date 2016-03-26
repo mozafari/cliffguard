@@ -15,7 +15,7 @@ public class SQLQueryAnalyzerTest {
     @Test
     public void analyzerBasicTest() throws IOException {
         ClassLoader cl = this.getClass().getClassLoader();
-        File queryFile = new File(cl.getResource("ParserTest/basic_queries.txt").getFile());
+        File queryFile = new File(cl.getResource("ParserTest/basic0_queries.txt").getFile());
 
         Map<String, Set<String>> schemas = new HashMap<String, Set<String>>();
         Set<String> station = new HashSet<String>(Arrays.asList("id", "city", "state", "lat_n", "long_w"));
@@ -24,15 +24,14 @@ public class SQLQueryAnalyzerTest {
         schemas.put("stats", stats);
         SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer();
         analyzer.analyzeFile(queryFile, schemas);
-        //analyzer.printQueryGroups();
-        Assert.assertTrue(true);
-        System.out.println("basic parser test passed.");
+        Assert.assertFalse(analyzer.hasUnresolvedColumn());
+        System.out.println("basic0 parser test passed.");
     }
 
     @Test
     public void analyzerAdvancedTest() throws IOException {
         ClassLoader cl = this.getClass().getClassLoader();
-        File queryFile = new File(cl.getResource("ParserTest/advanced_queries.txt").getFile());
+        File queryFile = new File(cl.getResource("ParserTest/basic1_queries.txt").getFile());
 
         Map<String, Set<String>> schemas = new HashMap<String, Set<String>>();
         Set<String> sailors = new HashSet<String>(Arrays.asList("sid", "sname", "rating", "age"));
@@ -45,9 +44,8 @@ public class SQLQueryAnalyzerTest {
 
         SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer();
         analyzer.analyzeFile(queryFile, schemas);
-        //analyzer.printQueryGroups();
-        Assert.assertTrue(true);
-        System.out.println("advanced parser test passed.");
+        Assert.assertFalse(analyzer.hasUnresolvedColumn());
+        System.out.println("basic1 parser test passed.");
     }
 
     @Test
@@ -66,8 +64,7 @@ public class SQLQueryAnalyzerTest {
 
         SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer();
         analyzer.analyzeFile(queryFile, schemas);
-        //analyzer.printQueryGroups();
-        Assert.assertTrue(true);
+        Assert.assertFalse(analyzer.hasUnresolvedColumn());
         System.out.println("extension parser test passed.");
     }
 }

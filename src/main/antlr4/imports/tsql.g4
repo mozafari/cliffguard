@@ -395,13 +395,29 @@ column_constraint
     :(CONSTRAINT id)? null_notnull?
       ((PRIMARY KEY | UNIQUE) clustered? index_options?
       | CHECK (NOT FOR REPLICATION)? '(' search_condition ')')
+      | (FOREIGN KEY)? reference_constraint
     ;
 
 // https://msdn.microsoft.com/en-us/library/ms188066.aspx
 table_constraint
     : (CONSTRAINT id)?
        ((PRIMARY KEY | UNIQUE) clustered? '(' column_name_list ')' index_options? (ON id)?
+       | FOREIGN KEY '(' column_name ')' reference_constraint
        | CHECK (NOT FOR REPLICATION)? '(' search_condition ')')
+    ;
+
+// https://msdn.microsoft.com/en-us/library/ms188066.aspx
+reference_constraint
+    : REFERENCES full_table_name '(' column_name ')'
+    on_delete? on_update?
+    ;
+
+on_delete
+    : ON DELETE ( NO ACTION | CASCADE | SET NULL | SET DEFAULT )
+    ;
+
+on_update
+    : ON UPDATE ( NO ACTION | CASCADE | SET NULL | SET DEFAULT )
     ;
 
 index_options
@@ -1298,6 +1314,7 @@ WRITETEXT:                       W R I T E T E X T;
 
 // Additional keywords (they can be id).
 ABSOLUTE:                        A B S O L U T E;
+ACTION:                          A C T I O N;
 APPLY:                           A P P L Y;
 AUTO:                            A U T O;
 AVG:                             A V G;
@@ -1352,6 +1369,7 @@ MIN_ACTIVE_ROWVERSION:           M I N '_' A C T I V E '_' R O W V E R S I O N;
 MODIFY:                          M O D I F Y;
 NEXT:                            N E X T;
 NAME:                            N A M E;
+NO:                              N O;
 NOCOUNT:                         N O C O U N T;
 NOEXPAND:                        N O E X P A N D;
 NORECOMPUTE:                     N O R E C O M P U T E;

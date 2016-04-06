@@ -1,6 +1,6 @@
 package edu.umich.robustopt.clustering;
 import java.util.*;
-import javafx.util.Pair;
+import edu.umich.robustopt.util.Pair;
 import java.io.IOException;
 
 //import com.relationalcloud.tsqlparser.Parser;

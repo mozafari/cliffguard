@@ -39,12 +39,12 @@ public abstract class QueryLogAnalyzer <Q extends Query>{
 		if (lagBetweenPairsOfWindows<1)
 			throw new Exception("lagBetweenPairsOfWindows < 1 :" + lagBetweenPairsOfWindows);
 		List<DistributionDistance> allDistances = new ArrayList<DistributionDistance>();
-		
 		for (int i=0; i<queryWindowList.size()-lagBetweenPairsOfWindows; ++i) {
 			DistributionDistance d = distDistanceGenerator.distance(queryWindowList.get(i).getQueries(), queryWindowList.get(i+lagBetweenPairsOfWindows).getQueries());
 			allDistances.add(d);
 			log.status(LogLevel.VERBOSE, "====================\nWin"+ i + " had " + queryWindowList.get(i).getQueries().size()  + " queries, Distance between Win " + i + " and Win " + (i+lagBetweenPairsOfWindows) + " " + d.showSummary());
 		}
+
 		int last = queryWindowList.size()-lagBetweenPairsOfWindows;
 		log.status(LogLevel.VERBOSE, "====================\nWin"+ last + " had " + queryWindowList.get(last).getQueries().size()  + " queries");
 		

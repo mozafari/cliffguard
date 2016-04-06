@@ -1,6 +1,6 @@
 package edu.umich.robustopt.staticanalysis;
 
-import javafx.util.Pair;
+import edu.umich.robustopt.util.Pair;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -77,5 +77,6 @@ public class SQLQueryAnalyzer {
         return res;
     }
 
+    public boolean hasUnresolvedColumn() { return analyzer.hasUnresolvedSymbol(); }
     private TSQLSelectStmtListener analyzer;
 }

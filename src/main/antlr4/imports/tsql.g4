@@ -725,6 +725,8 @@ function_call
     | CURRENT_TIMESTAMP
     // https://msdn.microsoft.com/en-us/library/ms176050.aspx
     | CURRENT_USER
+    | ROW_NUMBER
+    | ROWNUM
     // https://msdn.microsoft.com/en-us/library/ms186819.aspx
     | DATEADD '(' datepart ',' expression ',' expression ')'
     // https://msdn.microsoft.com/en-us/library/ms189794.aspx
@@ -817,23 +819,27 @@ ranking_windowed_function
 
 // https://msdn.microsoft.com/en-us/library/ms173454.aspx
 aggregate_windowed_function
-    : AVG '(' all_distinct_expression ')' over_clause?
-    | CHECKSUM_AGG '(' all_distinct_expression ')'
-    | GROUPING '(' expression ')'
-    | GROUPING_ID '(' expression_list ')'
-    | MAX '(' all_distinct_expression ')' over_clause?
-    | MIN '(' all_distinct_expression ')' over_clause?
-    | SUM '(' all_distinct_expression ')' over_clause?
-    | STDEV '(' all_distinct_expression ')' over_clause?
-    | STDEVP '(' all_distinct_expression ')' over_clause?
-    | VAR '(' all_distinct_expression ')' over_clause?
-    | VARP '(' all_distinct_expression ')' over_clause?
-    | COUNT '(' ('*' | all_distinct_expression) ')' over_clause?
-    | COUNT_BIG '(' ('*' | all_distinct_expression) ')' over_clause?
+    : AVG '(' all_distinct_expression ')' postgre_within_group_clause? over_clause?
+    | CHECKSUM_AGG '(' all_distinct_expression ')' postgre_within_group_clause?
+    | GROUPING '(' expression ')' postgre_within_group_clause?
+    | GROUPING_ID '(' expression_list ')' postgre_within_group_clause?
+    | MAX '(' all_distinct_expression ')' postgre_within_group_clause? over_clause?
+    | MIN '(' all_distinct_expression ')' postgre_within_group_clause? over_clause?
+    | SUM '(' all_distinct_expression ')' postgre_within_group_clause? over_clause?
+    | STDEV '(' all_distinct_expression ')' postgre_within_group_clause? over_clause?
+    | STDEVP '(' all_distinct_expression ')' postgre_within_group_clause? over_clause?
+    | VAR '(' all_distinct_expression ')' postgre_within_group_clause? over_clause?
+    | VARP '(' all_distinct_expression ')' postgre_within_group_clause? over_clause?
+    | COUNT '(' ('*' | all_distinct_expression) ')' postgre_within_group_clause? over_clause?
+    | COUNT_BIG '(' ('*' | all_distinct_expression) ')' postgre_within_group_clause? over_clause?
     ;
 
 all_distinct_expression
     : (ALL | DISTINCT)? expression
+    ;
+
+postgre_within_group_clause
+    : WITHIN GROUP '(' order_by_clause ')'
     ;
 
 // https://msdn.microsoft.com/en-us/library/ms189461.aspx
@@ -1397,6 +1403,7 @@ REPEATABLE:                      R E P E A T A B L E;
 ROOT:                            R O O T;
 ROW:                             R O W;
 ROWGUID:                         R O W G U I D;
+ROWNUM:                          R O W N U M;
 ROWS:                            R O W S;
 ROW_NUMBER:                      R O W '_' N U M B E R;
 SAMPLE:                          S A M P L E;

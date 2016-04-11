@@ -41,19 +41,31 @@ Refer to the README documentation to learn how you can use various tools that ar
 
 If you are not sure about installation of m2eclipse, then
 
-1. Check out Help -> Install New Software at menu bar. 
-2. Check your Eclipse version,  
+1. Select Window(from menu bar) -> Preference , expend Install/Update on side bar, and select "Available Software Sites", make sure to enable the item:
+    If you are 
+    + Juno user: Name: `Juno`(or `Eclipse Juno repository`), Location: `http://download.eclipse.org/releases/juno`
+    + Kepler user: Name: `Kepler`(or `Eclipse Kepler repository`), Location: `http://download.eclipse.org/releases/kepler`
+    + Luna user: `Luna`(or `Eclipse Luna repository`), Location: `http://download.eclipse.org/releases/luna`
+    + Mars user: `Mars`(or `Eclipse Mars repository`), Location: `http://download.eclipse.org/releases/mars`
+    
+    Enable your corresponding item, like the following:
+    <br>
+    <img src="src/main/resources/source.png" width="50%"/>
+    <br>
+    
+2. Check out Help -> Install New Software at menu bar. 
+3. Check your Eclipse version,  
     + If you are an Eclipse Luna or Mars user, copy the link [http://download.eclipse.org/technology/m2e/releases](http://download.eclipse.org/technology/m2e/releases) 
     + If you are Juno or Kepler user, copy the link [http://download.eclipse.org/technology/m2e/releases/1.4](http://download.eclipse.org/technology/m2e/releases/1.4) 
    
-3. Paste the link in previous step into "Work with" input box, then press "Add".
-4. It is okay to leave the "Name" input box to be blank, then press "OK", and check "Maven Integration for Eclipse" in the following list view.
-5. Check the option "Contact all update sites during install to find required software" at the bottom of the current window.
+4. Paste the link in previous step into "Work with" input box, then press "Add".
+5. It is okay to leave the "Name" input box to be blank, then press "OK", and check "Maven Integration for Eclipse" in the following list view.
+6. Check the option "Contact all update sites during install to find required software" at the bottom of the current window.
     At this point the screen should look like the following (again, Eclipse Juno and Kepler users should use http://download.eclipse.org/technology/m2e/releases/1.4).
     <br>
     <img src="src/main/resources/demo.png" width="50%"/>
     <br>
-6. Press "Next" -> "Next" -> "Finish".
+7. Press "Next" -> "Next" -> "Finish".
 
 ### How to set up the project into Eclipse
 

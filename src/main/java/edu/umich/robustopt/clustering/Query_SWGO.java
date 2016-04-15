@@ -75,11 +75,11 @@ public class Query_SWGO extends Query {
 				System.out.println("fail to analyze statement '"+sql+"'");
 			}
 
-			Set<Pair<String, String>> selectColumnStrings = p.getSelectStats();
-			Set<Pair<String, String>> fromColumnStrings = p.getFromStats();
-			Set<Pair<String, String>> whereColumnStrings = p.getWhereStats();
-			List<Pair<String, String>> groupByColumnStrings = p.getGroupByStats();
-			List<Pair<String, String>> orderByColumnStrings = p.getOrderByStats();
+			Set<Pair<String, String>> selectColumnStrings = p.getSelectColumns();
+			Set<Pair<String, String>> fromColumnStrings = p.getFromColumns();
+			Set<Pair<String, String>> whereColumnStrings = p.getWhereColumns();
+			List<Pair<String, String>> groupByColumnStrings = p.getGroupByColumns();
+			List<Pair<String, String>> orderByColumnStrings = p.getOrderByColumns();
 
 			select = new HashSet<ColumnDescriptor>();
 			from = new HashSet<ColumnDescriptor>();

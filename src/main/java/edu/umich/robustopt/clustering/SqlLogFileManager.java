@@ -1,24 +1,11 @@
 package edu.umich.robustopt.clustering;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
+import edu.umich.robustopt.staticanalysis.SQLQueryAnalyzer;
+import org.apache.commons.io.output.FileWriterWithEncoding;
 import org.apache.commons.math.stat.StatUtils;
 
 
@@ -156,7 +143,7 @@ public class SqlLogFileManager<Q extends Query>{
 			minLatencyInMilliSecs = 100L;
 			//findBaselineLatency();
 		double latencyFactor = 1.0;
-
+		String sqlString = new String();
 				
 		//BufferedReader in = new BufferedReader(new FileReader(input_query_log));
 		Scanner in = new Scanner (new File(input_query_log));
@@ -167,7 +154,8 @@ public class SqlLogFileManager<Q extends Query>{
 		Parser p;
 		List<Q> loaded_queries = new ArrayList<Q>();		 
 		SimpleDateFormat formatter = new SimpleDateFormat(timeStampFormat);
-		 
+		String queryString = new String();
+
 		while (in.hasNext()) {
 			line = in.next();
 			++lineNumber;
@@ -178,13 +166,17 @@ public class SqlLogFileManager<Q extends Query>{
 			++number_of_all_queries;
 			int pos1 = line.indexOf(fieldSeparator);
 			//int pos2 = line.indexOf(separator, pos1+1);
-			if (pos1 == -1) {
-				log.status(LogLevel.STATUS, input_query_log + " lineNumber " + lineNumber + " no separator!");
-				++number_of_corrupted_queries;
-				++number_of_corrupted_queries_no_delimeter;
-				continue;
+			String timestampStr;
+			if (pos1 == -1 || line.charAt(pos1+1)=='|') {
+				//log.status(LogLevel.STATUS, "Warning: " + input_query_log + " lineNumber " + lineNumber + " no separator.");
+				//++number_of_corrupted_queries;
+				//++number_of_corrupted_queries_no_delimeter;
+				//continue;
+				pos1 = -1;
+				timestampStr = formatter.format(new Date(System.currentTimeMillis() + number_of_all_queries*(86400 * 7 * 1000)));
 			}
-			String timestampStr = line.substring(0, pos1);
+			else timestampStr = line.substring(0, pos1);
+
 			timestampStr = timestampStr.replaceAll("\n", "");
 			timestampStr = timestampStr.replaceAll("\r", "");
 			
@@ -216,19 +208,28 @@ public class SqlLogFileManager<Q extends Query>{
 			//}
 			
  			Q query;
+
 			try {
-				query = qParser.parse(lineNumber, timestamp, null, sql, schemaMap); 
-				
-				if (query.isEmpty()) {
-					++ number_of_empty_queries;
-				 	continue;
+				queryString = queryString + sql + '\n';
+				sqlString = sqlString + sql + '\n';
+				if (sql.replace("\r", "").replace( "\t", "").trim().endsWith(";")) {
+					query = qParser.parse(lineNumber, timestamp, null, queryString, schemaMap);
+					queryString = "";
 				}
+				else
+					query = null;
+
+				//if (query.isEmpty()) {
+					//++ number_of_empty_queries;
+				 	//continue;
+				//}
 				
 				//log.status(LogLevel.VERBOSE, "<line: " + lineNumber + "> " + query.getSql());
 				//log.status(LogLevel.VERBOSE, "summarized as: " + query.toString());			 
 			} catch (Throwable t) {
 				//log.error(input_query_log + " query number: " + lineNumber + "; message: " + t.getMessage());
-				System.out.println(t);
+				//System.out.println(t);
+				t.printStackTrace();
 				++ number_of_ignored_by_parser;
 				continue;
 			}
@@ -252,11 +253,15 @@ public class SqlLogFileManager<Q extends Query>{
 			if (dbDesigner!=null)
 				throw new Exception("We haven't implemented this feature yet!");
 			
-			loaded_queries.add(query);
+			if (query!=null) loaded_queries.add(query);
 			
 		}
 		in.close();
-		
+
+		SQLQueryAnalyzer statsAnalyzer = new SQLQueryAnalyzer();
+		statsAnalyzer.setVerbose(true);
+		statsAnalyzer.analyzeString(sqlString, SchemaUtils.toPlainMap(schemaMap.get(SchemaUtils.defaultSchemaName)));
+
 		Collections.sort(loaded_queries, new QueryTemporalComparator());
 
 		all_queries = loaded_queries;

@@ -1,11 +1,9 @@
 package edu.umich.robustopt.experiments;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 
 import com.relationalcloud.tsqlparser.loader.Schema;
 
@@ -18,13 +16,16 @@ import edu.umich.robustopt.common.BLog;
 import edu.umich.robustopt.common.BLog.LogLevel;
 import edu.umich.robustopt.dblogin.DatabaseLoginConfiguration;
 import edu.umich.robustopt.microsoft.MicrosoftDatabaseLoginConfiguration;
-import edu.umich.robustopt.staticanalysis.SQLSchemaAnalyzer;
+import edu.umich.robustopt.staticanalysis.SQLQueryAnalyzer;
 import edu.umich.robustopt.util.SchemaUtils;
 import edu.umich.robustopt.util.Timer;
 import edu.umich.robustopt.vertica.VerticaDatabaseLoginConfiguration;
 import edu.umich.robustopt.workloads.DistributionDistance;
 import edu.umich.robustopt.workloads.EuclideanDistanceWithSimpleUnion;
 import edu.umich.robustopt.workloads.EuclideanDistanceWithSimpleUnion.UnionOption;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import org.apache.commons.io.FileUtils;
 
 public class WorkloadMiner {
 	
@@ -93,9 +94,15 @@ public class WorkloadMiner {
 			//List<DatabaseLoginConfiguration> allDatabaseConfigurations = loadDatabaseLoginConfigurations(db_vendor, loginConfigFile);
 			//Map<String, Schema> schemaMap = SchemaUtils.GetSchemaMap(DBalias, allDatabaseConfigurations).getSchemas();
 
+			//System.out.println("=======================================================================");
+			if (schemaOut) {
+				System.out.println();
+				System.out.println("Current Schema: ");
+				System.out.println(schemaMap.get(SchemaUtils.defaultSchemaName));
+			}
 			SqlLogFileManager<Query_SWGO> sqlLogFileManager = new SqlLogFileManager<Query_SWGO>('|', "\n", new Query_SWGO.QParser(), schemaMap);
-			
 			List<Query_SWGO> windowsQueriesSWGO = sqlLogFileManager.loadTimestampQueriesFromFile(inputTimestampedQueryLogFile);
+			//System.out.println("=======================================================================");
 
 			// using DistributionDistance_ClusterFrequency as DistributionDistance
 			//UnpartitionedQueryLogAnalyzer<Query_SWGO> analyzer = new UnpartitionedQueryLogAnalyzer<Query_SWGO>(new Query_SWGO.QParser(), sqlLogFileManager.getAll_queries(), new DistributionDistance_ClusterFrequency.Generator());
@@ -122,8 +129,8 @@ public class WorkloadMiner {
 				
 			DistributionDistance avgDist = analyzer.measureAvgDistanceBetweenConsecutiveWindows(analyzer.splitIntoTimeEqualWindows(numberOfDaysInEachWindow));
 				
-			System.out.println("====================\nAvg Distance between consecutive windows, each window " + numberOfDaysInEachWindow + " days long");
-			System.out.println(avgDist.showSummary());
+			//System.out.println("Avg Distance between consecutive windows, each window " + numberOfDaysInEachWindow + " days long");
+			//System.out.println(avgDist.showSummary());
 				
 			List<QueryWindow> windows = analyzer.splitIntoTimeEqualWindows(numberOfDaysInEachWindow);
 			numberOfWindowsToRead = (numberOfWindowsToRead==-1 ? windows.size() - numberOFInitialWindowsToSkip : numberOfWindowsToRead);
@@ -132,19 +139,21 @@ public class WorkloadMiner {
 				
 			String dirPath = outputDirectory + File.separatorChar + "separateWindows-" + numberOfDaysInEachWindow + "daysEach";
 			File directory = new File(dirPath);
-			if (directory.exists())
-				throw new Exception("Directory already exists: " + dirPath);
+			if (directory.exists()) {
+				//throw new Exception("Directory already exists: " + dirPath);
+			}
 			else
 				directory.mkdir();
-			SqlLogFileManager.writeListOfQueryWindowsToSeparateFiles(directory, windows);
+			//SqlLogFileManager.writeListOfQueryWindowsToSeparateFiles(directory, windows);
+
 			System.out.println("Done mining your past workload.");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
 	}
-	
-	public static void main(String[] args) throws Exception {
+
+	public static void _main(String[] args) throws Exception {
 		//String db_vendor; // vertica or microsoft
 		//String dbAlias;
 		String outputDirectory;
@@ -154,8 +163,7 @@ public class WorkloadMiner {
 		int numberOfDaysInEachWindow = 7;
 		int numberOFInitialWindowsToSkip = 0;
 		int numberOfWindowsToRead = -1;
-		
-		
+
 		String usageMessage = "Usage: java -cp CliffGuard.jar edu.umich.robustopt.experiments.WorkloadMiner schema_file query_file output_dir output_dir [window_size_in_days number_of_initial_windows_to_skip number_of_windows_to_read]"
 				+ "\n\n"
 				//+ "db_vendor: either 'vertica' or 'microsoft' (without quotations)\n"
@@ -194,7 +202,7 @@ public class WorkloadMiner {
 			numberOfWindowsToRead  = Integer.parseInt(args[idx++]);
 			assert numberOfWindowsToRead > 0 || numberOfWindowsToRead==-1;
 		}
-			
+		/*
 		log.status(LogLevel.STATUS, "Running with the following parameters:\n"
 				//+ "db_vendor=" + db_vendor
 				//+ "\ndb_alias=" + dbAlias
@@ -207,7 +215,7 @@ public class WorkloadMiner {
 				+ "\nnumber_of_windows_to_read = " + numberOfWindowsToRead
 				+ "\n"
 				);
-	
+	*/
 		
 		Timer t = new Timer();
 		File schemaFile = new File(schemaFileName);
@@ -216,6 +224,138 @@ public class WorkloadMiner {
 		
 		log.status(LogLevel.STATUS, "DONE.");
 		
+	}
+
+	static public void print_help() {
+		System.out.println(
+				"Usage:\n" +
+				"  java -cp CliffGuard.jar edu.umich.robustopt.experiments.WorkloadMiner schema_file query_file [options]\n" +
+				"\n" +
+				"Options:\n" +
+				"  -g --general      General statistics on appearing times of given tables and columns\n" +
+				"  -p --popularity   Popular tables/columns in terms of number of queries in which which they appear\n" +
+				"  -c --combination  Popular combinations of columns in terms of number of queries in which they appear together\n" +
+				"  -j --join         Popular joined column groups\n" +
+				"  -a --aggregate    Statistics about columns that have appeared as a parameter to aggregate functions\n" +
+				"  --all             Output all the mining results\n" +
+				"  --help            Help for WorkloadMiner\n" +
+				"  --only-column     Only show results about COLUMN statistics\n" +
+				"  --only-table      Only show results about TABLE statistics\n" +
+				"  --show-schema     Show the schema that the query file is using\n");
+	}
+
+	static private boolean schemaOut = false;
+	static public void main(String[] args) throws Exception {
+		OptionParser parser = new OptionParser( "g::p::c::j::a::" );
+		parser.accepts("general").withOptionalArg();
+		parser.accepts("popularity").withOptionalArg();
+		parser.accepts("combination").withOptionalArg();
+		parser.accepts("join").withOptionalArg();
+		parser.accepts("aggregate").withOptionalArg();
+		parser.accepts("all");
+		parser.accepts("help");
+		parser.accepts("only-columns");
+		parser.accepts("only-tables");
+
+		if (args.length<2) {
+			OptionSet options = parser.parse(args);
+			if (options.has("help"))
+				print_help();
+			else print_help();
+			return;
+		}
+
+		File schemaFile = new File(args[0]);
+		File queryFile = new File(args[1]);
+
+		if (!schemaFile.exists() || schemaFile.isDirectory())
+			System.out.println("Schema file: " + schemaFile.toString() + " does not exist! Exit.");
+		if (!queryFile.exists() || queryFile.isDirectory())
+			System.out.println("Query file: " + queryFile.toString() + " does not exist! Exit.");
+		OptionSet options = parser.parse(Arrays.copyOfRange(args, 2, args.length));
+
+		SQLQueryAnalyzer.Configuration config = new SQLQueryAnalyzer.Configuration();
+		String gOpt = null, pOpt = null, jOpt = null, aOpt = null, cOpt = null;
+		if (options.has("g")) gOpt = "g";
+		else if (options.has("general")) gOpt = "general";
+		if (options.has("p")) pOpt = "p";
+		else if (options.has("popularity")) pOpt = "popularity";
+		if (options.has("j")) jOpt = "j";
+		else if (options.has("join")) jOpt = "join";
+		if (options.has("a")) aOpt = "a";
+		else if (options.has("aggregate")) aOpt = "aggregate";
+		if (options.has("c")) cOpt = "c";
+		else if (options.has("combination")) cOpt = "combination";
+		if (gOpt!=null) {
+			if (options.hasArgument(gOpt))
+				config.g_mode = options.valueOf(gOpt).toString();
+			else
+				config.g_mode = "u";
+		}
+		if (pOpt!=null) {
+			if (options.hasArgument(pOpt))
+				config.p_mode = options.valueOf(pOpt).toString();
+			else
+				config.p_mode = "u";
+		}
+		if (jOpt!=null) {
+			if (options.hasArgument(jOpt))
+				config.j_mode = options.valueOf(jOpt).toString();
+			else
+				config.j_mode = "u";
+		}
+		if (aOpt!=null) {
+			if (options.hasArgument(aOpt))
+				config.a_mode = options.valueOf(aOpt).toString();
+			else
+				config.a_mode = "u";
+		}
+		if (cOpt!=null) {
+			if (options.hasArgument(cOpt))
+				config.c_mode = options.valueOf(cOpt).toString();
+			else
+				config.c_mode = "u";
+		}
+
+
+		if (options.has("all")) { // u = union
+			config.g_mode = "uswfgo";
+			config.p_mode = "uswfgo";
+			config.c_mode = "uswfgo";
+			config.j_mode = "ug";
+			config.a_mode = "ug";
+		}
+
+		if (options.has("only-columns")) {
+			if (options.has("only-tables")) {
+				System.out.println("--only-columns option conflict with --only-tables");
+				print_help();
+			}
+			else config.table_on = false;
+		}
+		else if (options.has("only-tables"))
+			config.column_on = false;
+
+		if (options.has("show-schema"))
+			schemaOut = true;
+
+		if (args.length==2) {
+			config.g_mode = "u";
+			config.p_mode = "u";
+			config.c_mode = "u";
+			config.j_mode = "u";
+			config.a_mode = "u";
+		}
+
+		if (options.has("help")) {
+			print_help();
+			return;
+		}
+
+		SQLQueryAnalyzer.setConfig(config);
+		Path tmp = Files.createTempDirectory(null);
+		FileUtils.forceDeleteOnExit(tmp.toFile());
+		_main(new String[]{schemaFile.toString(), queryFile.toString(), tmp.toString()});
 	}
 
 }

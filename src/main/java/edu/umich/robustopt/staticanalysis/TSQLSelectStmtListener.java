@@ -129,7 +129,9 @@ class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
 
                     SQLColumnContextBuilder sccb = new SQLColumnContextBuilder();
                     sccb.setColumnNameInfo(c);
+                    SQLContextStack.push(resolvingContext);
                     sccb.setContextStack((ArrayDeque<SQLContext>) SQLContextStack);
+                    SQLContextStack.pop();
                     statsObserver.observe(sccb.build());
                     return;
                 }
@@ -215,6 +217,8 @@ class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
         SQLContextStack.pop();
         symbolStack.push(lastDerivedSymbols);
         symbolStack.peek().stream().forEach(x->x.setTableAlias(x.getQueryTableName()));
+
+        resolvingContext = new SQLContext(SQLContext.ClauseType.ORDERBY);
         new ColumnResolver().resolveAll(lastResolvedQuery.getOrderByColumnInfo());
         symbolStack.pop();
     }
@@ -282,13 +286,17 @@ class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
 
         ColumnResolver resolver = new ColumnResolver();
         lastDerivedSymbols.clear();
+        resolvingContext = new SQLContext(SQLContext.ClauseType.SELECT);
         for (ColumnNameInfo c : selectInfo) {
             resolver.resolveName(c);
             lastDerivedSymbols.add(c);
         }
 
+        resolvingContext = new SQLContext(SQLContext.ClauseType.FROM);
         resolver.resolveAll(swgoTop.getFromColumnInfo());
+        resolvingContext = new SQLContext(SQLContext.ClauseType.WHERE);
         resolver.resolveAll(swgoTop.getWhereColumnInfo());
+        resolvingContext = new SQLContext(SQLContext.ClauseType.GROUPBY);
         resolver.resolveAll(swgoTop.getGroupByColumnInfo());
         lastResolvedQuery = swgoTop;
 
@@ -367,6 +375,7 @@ class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
     private QueryInfo lastResolvedQuery;
     private List<ColumnNameInfo> unresolvedSymbols = new ArrayList<>();
 
+    private SQLContext resolvingContext;
     private int nestedLevel = 0;
     private SQLColumnStats statsObserver;
     // TODO: tables with schema names?

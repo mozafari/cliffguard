@@ -38,6 +38,7 @@ public class SQLQueryAnalyzer {
         if (verbose) {
             stats.printFreqStats();
             stats.printTupleStats();
+            stats.printTableFreq();
         }
     }
 

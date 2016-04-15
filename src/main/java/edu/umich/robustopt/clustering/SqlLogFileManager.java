@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
+import edu.umich.robustopt.staticanalysis.SQLQueryAnalyzer;
 import org.apache.commons.math.stat.StatUtils;
 
 
@@ -156,7 +157,7 @@ public class SqlLogFileManager<Q extends Query>{
 			minLatencyInMilliSecs = 100L;
 			//findBaselineLatency();
 		double latencyFactor = 1.0;
-
+		String sqlString = new String();
 				
 		//BufferedReader in = new BufferedReader(new FileReader(input_query_log));
 		Scanner in = new Scanner (new File(input_query_log));
@@ -218,7 +219,7 @@ public class SqlLogFileManager<Q extends Query>{
  			Q query;
 			try {
 				query = qParser.parse(lineNumber, timestamp, null, sql, schemaMap); 
-				
+				sqlString = sqlString + sql + '\n';
 				if (query.isEmpty()) {
 					++ number_of_empty_queries;
 				 	continue;
@@ -256,7 +257,11 @@ public class SqlLogFileManager<Q extends Query>{
 			
 		}
 		in.close();
-		
+
+		SQLQueryAnalyzer statsAnalyzer = new SQLQueryAnalyzer();
+		statsAnalyzer.setVerbose(true);
+		statsAnalyzer.analyzeString(sqlString, SchemaUtils.toPlainMap(schemaMap.get("public")));
+
 		Collections.sort(loaded_queries, new QueryTemporalComparator());
 
 		all_queries = loaded_queries;

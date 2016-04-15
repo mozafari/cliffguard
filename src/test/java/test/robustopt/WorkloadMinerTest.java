@@ -1,5 +1,6 @@
 package test.robustopt;
 
+import edu.umich.robustopt.staticanalysis.SQLColumnContext;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import edu.umich.robustopt.experiments.WorkloadMiner;

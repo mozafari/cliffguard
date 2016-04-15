@@ -30,7 +30,7 @@ public class TSQLDDLStmtListener extends Antlr4TSQLAnalyzerBaseListener {
         public void setForeignKey(ColumnDescriptor col) { columns.get(col).setForeignKey(); }
         public final String getTableName() { return tableName; }
         public final Set<String> getColumnNameSet() {
-            return columns.keySet().stream().map(x -> x.getColumnName())
+            return columns.keySet().stream().map(ColumnDescriptor::getColumnName)
                     .collect(Collectors.toSet());
         }
         public TableInfo(String name) { tableName = name; }
@@ -71,7 +71,7 @@ public class TSQLDDLStmtListener extends Antlr4TSQLAnalyzerBaseListener {
         return schemaList.stream().collect(Collectors.toList());
     }
     public Map<String, Set<String>> getPlainSchemaMap() {
-        Map<String, Set<String>> res = new HashMap<String, Set<String>>();
+        Map<String, Set<String>> res = new HashMap<>();
         for (TableInfo item : schemaList)
             res.put(item.getTableName(), item.getColumnNameSet());
         return res;

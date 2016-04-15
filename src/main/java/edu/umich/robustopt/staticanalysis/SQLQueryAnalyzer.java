@@ -32,7 +32,13 @@ public class SQLQueryAnalyzer {
 
         analyzer = new TSQLSelectStmtListener();
         analyzer.setSchemas(schemas);
+        analyzer.setStats(stats);
+
         ParseTreeWalker.DEFAULT.walk(analyzer, parser.tsql_file());
+        if (verbose) {
+            stats.printFreqStats();
+            stats.printTupleStats();
+        }
     }
 
 
@@ -42,41 +48,47 @@ public class SQLQueryAnalyzer {
         System.out.println(">>>========================================");
     }
 
-    public Set<Pair<String, String>> getSelectStats() {
+    public Set<Pair<String, String>> getSelectColumns() {
         HashSet<Pair<String, String>> res = new HashSet<Pair<String, String>>();
         for (List<QueryInfo> q : analyzer.getQueryGroups())
             q.forEach(x -> res.addAll(x.getSelectColumnStrings()));
         return res;
     }
 
-    public Set<Pair<String, String>> getFromStats() {
+    public Set<Pair<String, String>> getFromColumns() {
         HashSet<Pair<String, String>> res = new HashSet<Pair<String, String>>();
         for (List<QueryInfo> q : analyzer.getQueryGroups())
             q.forEach(x -> res.addAll(x.getFromColumnStrings()));
         return res;
     }
 
-    public Set<Pair<String, String>> getWhereStats() {
+    public Set<Pair<String, String>> getWhereColumns() {
         HashSet<Pair<String, String>> res = new HashSet<Pair<String, String>>();
         for (List<QueryInfo> q : analyzer.getQueryGroups())
             q.forEach(x -> res.addAll(x.getWhereColumnStrings()));
         return res;
     }
 
-    public List<Pair<String, String>> getGroupByStats() {
+    public List<Pair<String, String>> getGroupByColumns() {
         List<Pair<String, String>> res = new ArrayList<Pair<String, String>>();
         for (List<QueryInfo> q : analyzer.getQueryGroups())
             q.forEach(x -> res.addAll(x.getGroupByColumnStrings()));
         return res;
     }
 
-    public List<Pair<String, String>> getOrderByStats() {
+    public List<Pair<String, String>> getOrderByColumns() {
         List<Pair<String, String>> res = new ArrayList<Pair<String, String>>();
         for (List<QueryInfo> q : analyzer.getQueryGroups())
             q.forEach(x -> res.addAll(x.getOrderByColumnStrings()));
         return res;
     }
 
+    public SQLQueryAnalyzer() { stats = new SQLColumnStats(); }
+    public SQLQueryAnalyzer(SQLColumnStats s) { stats = s; }
+
     public boolean hasUnresolvedColumn() { return analyzer.hasUnresolvedSymbol(); }
+    public void setVerbose(boolean v) { verbose = v; }
+    private boolean verbose = false;
     private TSQLSelectStmtListener analyzer;
+    private SQLColumnStats stats;
 }

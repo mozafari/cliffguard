@@ -38,22 +38,23 @@ Refer to the README documentation to learn how you can use various tools that ar
 
 - Eclipse (Luna or Mars version are recommended)
 - m2eclipse plugin for Eclipse
+- maven-build-helper plugin for Eclipse
 
-If you are not sure about installation of m2eclipse, then
+To install m2eclipse plugin for Eclipse:
 
-1. Select Window(from menu bar) -> Preference , expend Install/Update on side bar, and select "Available Software Sites", make sure to enable the item:
-    If you are 
-    + Juno user: Name: `Juno`(or `Eclipse Juno repository`), Location: `http://download.eclipse.org/releases/juno`
-    + Kepler user: Name: `Kepler`(or `Eclipse Kepler repository`), Location: `http://download.eclipse.org/releases/kepler`
-    + Luna user: `Luna`(or `Eclipse Luna repository`), Location: `http://download.eclipse.org/releases/luna`
-    + Mars user: `Mars`(or `Eclipse Mars repository`), Location: `http://download.eclipse.org/releases/mars`
+1. Select Window (from menu bar) -> Preference (or under the "Eclipse" menu on Mac OSX), expend Install/Update on side bar, and select "Available Software Sites",
+    then if you are 
+    + Eclipse Juno user: Enable the item with **Name**: `Juno` (or `Eclipse Juno repository`) and **Location**: `http://download.eclipse.org/releases/juno`
+    + Eclipse Kepler user: Enable the item with **Name**: `Kepler` (or `Eclipse Kepler repository`) and **Location**: `http://download.eclipse.org/releases/kepler`
+    + Eclipse Luna user: Enable the item with **Name** `Luna` (or `Eclipse Luna repository`) and **Location**: `http://download.eclipse.org/releases/luna`
+    + Eclipse Mars user: Enable the item with **Name** `Mars` (or `Eclipse Mars repository`) and **Location**: `http://download.eclipse.org/releases/mars`
     
-    Enable your corresponding item, like the following:
+    Enable corresponding item, like the following:
     <br>
     <img src="src/main/resources/source.png" width="50%"/>
     <br>
     
-2. Check out Help -> Install New Software at menu bar. 
+2. Click Help -> Install New Software at menu bar. 
 3. Check your Eclipse version,  
     + If you are an Eclipse Luna or Mars user, copy the link [http://download.eclipse.org/technology/m2e/releases](http://download.eclipse.org/technology/m2e/releases) 
     + If you are Juno or Kepler user, copy the link [http://download.eclipse.org/technology/m2e/releases/1.4](http://download.eclipse.org/technology/m2e/releases/1.4) 
@@ -67,24 +68,34 @@ If you are not sure about installation of m2eclipse, then
     <br>
 7. Press "Next" -> "Next" -> "Finish".
 
+To install maven-build-helper plugin, you can just repeat the process for installing m2e plugin like the above: 
+
+1. Click Help -> Install New Software at menu bar. 
+2. Check your Eclipse version, copy the link http://repo1.maven.org/maven2/.m2e/connectors/m2eclipse-buildhelper/0.15.0/N/0.15.0.201207090124/
+3. Paste the link in previous step into "Work with" input box, then press "Add".
+4. Press "OK", and check "M2E Buildhelper Connector" in the following list view.
+5. Press "Next" -> "Next" -> "Finish".
+
 ### How to set up the project into Eclipse
 
-1. From Eclipse, Project Explorer -> Right click -> Select Import Menu and Import, or from top menu bar, File -> Import.
+1. From Eclipse top menu bar, click File -> Import.
 
 2. Expand Maven menu, click "Existing Maven Projects", and click next.
 
-3. Browse the location where you have the CliffGuard source code, select the top level root directory.
+3. Browse the location where you have the CliffGuard source code, select the top level root directory, then click next.
 
-4. Click next, Eclipse will recognize project and it will show you a list of all possible projects located there.
+4. Eclipse will recognize project and it will show you a list of all possible projects located there.
 
-5. Select the project org.cliffguard.cliffguard, click "Finish", then Eclipse shows some build information, then done.
+5. Select the project org.cliffguard.cliffguard, click "Next", then Eclipse shows some build information, then click "Finish".
+
+6. Done! (There might be some automatic setup process conducted by Eclipse at this point, and it is okay to click "Next" as whatever Eclipse asks you to permit)  
 
 ## Developer Guide 
 (Users should skip these steps)
 
 **WARNING**: This developer guide is only intended for academic researchers. To follow the instructions below you need to be using the academic version (the academic version is different from the public oepn-source version that is available at [http://CliffGuard.org](http://CliffGuard.org)). The academic version is not open-source and is shared on a per-request basis. If you wish to access the academic version, please contact us at mozafari <AT> umich.edu.
 
-### How to enable Vertica to empty the OS cache:
+#### How to enable Vertica to empty the OS cache:
 
 1. Run the following command as "dbadmin":
 
@@ -117,7 +128,7 @@ and see if it prints out root!
 	(1 row)
 ```
 
-### Installing SWIG and GLPK
+#### Installing SWIG and GLPK
 
 You only need to install SWIG and GLPK if you are looking to use some of the advanced features in CliffGuard. Not recommended for beginner users.
 

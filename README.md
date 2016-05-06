@@ -86,7 +86,12 @@ Optional parameter:
 
 ### WorkloadMiner
 
-Usage:
+**Note:** The WorkloadMiner is still is still unstable, to test whether it works correctly, you can firtly run
+```
+mvn test
+```
+
+WorkloadMiner Usage:
 
 ```bash
 java -cp CliffGuard.jar edu.umich.robustopt.experiments.WorkloadMiner schema_file query_file output_dir [window_size_in_days number_of_initial_windows_to_skip number_of_windows_to_read]

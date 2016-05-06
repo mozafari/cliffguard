@@ -7,13 +7,17 @@ import java.util.Objects;
  */
 public class SQLContext {
     enum ClauseType {
-        NIL, SELECT, WHERE, FROM, GROUPBY, ORDERBY, EXPRESSION
+        NIL, SELECT, WHERE, FROM, GROUPBY, ORDERBY, EXPRESSION, STATEMENT
     }
     SQLContext(ClauseType t) {
         type = t;
         id = nextId++;
     }
 
+    @Override
+    public String toString() {
+        return "(" + id.toString() + ", " + type + ")";
+    }
     @Override
     public int hashCode() { return id; }
 

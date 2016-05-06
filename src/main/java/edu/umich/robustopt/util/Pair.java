@@ -27,7 +27,7 @@ public class Pair<K,V> implements Serializable{
 		// these two parameters:
 		//  name: a  value: aa
 		//  name: aa value: a
-		return first.hashCode() * 13 + (second == null ? 0 : second.hashCode());
+		return first.hashCode() * 499 + (second == null ? 0 : second.hashCode());
 	}
 
 	@Override

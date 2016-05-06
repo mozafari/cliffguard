@@ -75,6 +75,10 @@ public class ColumnDescriptor implements Serializable, Cloneable {
 		return "ColumnDescriptor [" + schemaName + "." + tableName + "." + columnName + "]";
 	}
 
+	public String getTableColumnName() {
+		return tableName + "." + columnName;
+	}
+
 	@Override
 	public int hashCode() {
 

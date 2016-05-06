@@ -258,9 +258,9 @@ public class SqlLogFileManager<Q extends Query>{
 		}
 		in.close();
 
-		SQLQueryAnalyzer statsAnalyzer = new SQLQueryAnalyzer();
-		statsAnalyzer.setVerbose(true);
-		statsAnalyzer.analyzeString(sqlString, SchemaUtils.toPlainMap(schemaMap.get("public")));
+		//SQLQueryAnalyzer statsAnalyzer = new SQLQueryAnalyzer();
+		//statsAnalyzer.setVerbose(true);
+		//statsAnalyzer.analyzeString(sqlString, SchemaUtils.toPlainMap(schemaMap.get("public")));
 
 		Collections.sort(loaded_queries, new QueryTemporalComparator());
 

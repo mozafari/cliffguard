@@ -5,7 +5,7 @@ import edu.umich.robustopt.staticanalysis.Antlr4TSQLAnalyzerParser.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import edu.umich.robustopt.staticanalysis.SQLColumnContext.SQLColumnContextBuilder;
+import edu.umich.robustopt.util.SchemaUtils;
 
 /**
  * Created by sorrow17 on 2016/2/8.
@@ -35,6 +35,9 @@ class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
         public boolean isResolved() { return resolved; }
 
         public void copyTrueNameFrom(ColumnNameInfo other) { trueName = other.trueName; }
+        public void copyResolvedNameFrom(ColumnNameInfo other) { setResolvedName(other.getResolvedTableName(), other.getResolvedColumnName()); }
+        public void copyAliasFrom(ColumnNameInfo other) { setTableAlias(other.getTableAlias()); setColumnAlias(other.getColumnAlias()); }
+
         public void setTrueName(String tableName, String columnName) { trueName = new Pair<>(tableName, columnName); }
         public void setTableAlias(String alias) { this.alias = new Pair<>(alias, this.alias.getValue()); }
         public void setColumnAlias(String alias) { this.alias = new Pair<>(this.alias.getKey(), alias); }
@@ -116,6 +119,7 @@ class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
             }
             return matchedColumn;
         }
+
         public void resolveName(ColumnNameInfo c) {
             if (c.isResolved()) return;
             ColumnNameInfo matchedColumn;
@@ -127,17 +131,15 @@ class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
                     c.copyTrueNameFrom(matchedColumn);
                     c.setResolvedName(null, c.getQueryColumnName());
 
-                    SQLColumnContextBuilder sccb = new SQLColumnContextBuilder();
-                    sccb.setColumnNameInfo(c);
-                    SQLContextStack.push(resolvingContext);
-                    sccb.setContextStack((ArrayDeque<SQLContext>) SQLContextStack);
-                    SQLContextStack.pop();
-                    statsObserver.observe(sccb.build());
+                    List<ColumnDescriptor> columnList = rawResult.getOrDefault(c.getPosition(), new ArrayList<>());
+                    columnList.add(new ColumnDescriptor(SchemaUtils.defaultSchemaName, c.getTrueTableName(), c.getTrueColumnName()));
+                    rawResult.put(c.getPosition(), columnList);
                     return;
                 }
             }
             unresolvedSymbols.add(c);
         }
+
         public void resolveAll(Collection<ColumnNameInfo> c) { c.stream().forEach(this::resolveName); }
     }
 
@@ -177,11 +179,11 @@ class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
     }
 
     @Override
-    public void enterTsql_file(Tsql_fileContext ctx) {
-        SQLContextStack.push(new SQLContext(SQLContext.ClauseType.NIL));
+    public void enterSql_clause(Sql_clauseContext ctx) {
+        SQLContextStack.push(new SQLContext(SQLContext.ClauseType.STATEMENT));
     }
     @Override
-    public void exitTsql_file(Tsql_fileContext ctx) { SQLContextStack.pop(); }
+    public void exitSql_clause(Sql_clauseContext ctx) { SQLContextStack.pop(); }
     @Override
     public void enterSelect_list(Select_listContext ctx) {
         SQLContextStack.push(new SQLContext(SQLContext.ClauseType.SELECT));
@@ -218,7 +220,6 @@ class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
         symbolStack.push(lastDerivedSymbols);
         symbolStack.peek().stream().forEach(x->x.setTableAlias(x.getQueryTableName()));
 
-        resolvingContext = new SQLContext(SQLContext.ClauseType.ORDERBY);
         new ColumnResolver().resolveAll(lastResolvedQuery.getOrderByColumnInfo());
         symbolStack.pop();
     }
@@ -269,34 +270,51 @@ class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
 
         Set<ColumnNameInfo> selectInfo = swgoTop.getSelectColumnInfo();
         Set<ColumnNameInfo> expandedInfo = new HashSet<>();
+        // TODO new columnNameInfo constructed twice.
         for (ColumnNameInfo c : selectInfo)
             if (c.getQueryColumnName().equals("*")) {
                 if (c.getQueryTableName() == null) {
-                    expandedInfo.addAll(symbolStack.peek());
+                    for (ColumnNameInfo item : symbolStack.peek()) {
+                        ColumnNameInfo info = new ColumnNameInfo(item.getQueryTableName(), item.getQueryColumnName());
+                        info.copyTrueNameFrom(item);
+                        info.copyResolvedNameFrom(item);
+                        info.copyAliasFrom(item);
+                        info.setPosition(c.getPosition().getKey(), c.getPosition().getValue());
+                        expandedInfo.add(info);
+                    }
+                    //expandedInfo.addAll(symbolStack.peek());
                 } else {
                     String tableName = c.getQueryTableName();
                     for (ColumnNameInfo column : symbolStack.peek())
-                        if (Columns.matchesTableName(column, tableName))
-                            expandedInfo.add(column);
+                        if (Columns.matchesTableName(column, tableName)) {
+                            ColumnNameInfo info = new ColumnNameInfo(column.getQueryTableName(), column.getQueryColumnName());
+                            info.copyTrueNameFrom(column);
+                            info.copyResolvedNameFrom(column);
+                            info.copyAliasFrom(column);
+                            info.setPosition(c.getPosition().getKey(), c.getPosition().getValue());
+                            expandedInfo.add(info);
+                        }
                 }
             }
 
         selectInfo.removeIf(x->x.getQueryColumnName().equals("*"));
         selectInfo.addAll(expandedInfo);
+        for (ColumnNameInfo col : expandedInfo) {
+            List<ColumnDescriptor> l = rawResult.getOrDefault(col.getPosition(), new ArrayList<>());
+            ColumnDescriptor cid = new ColumnDescriptor(SchemaUtils.defaultSchemaName, col.getTrueTableName(), col.getTrueColumnName());
+            l.add(cid);
+            rawResult.put(col.getPosition(), l);
+        }
 
         ColumnResolver resolver = new ColumnResolver();
         lastDerivedSymbols.clear();
-        resolvingContext = new SQLContext(SQLContext.ClauseType.SELECT);
         for (ColumnNameInfo c : selectInfo) {
             resolver.resolveName(c);
             lastDerivedSymbols.add(c);
         }
 
-        resolvingContext = new SQLContext(SQLContext.ClauseType.FROM);
         resolver.resolveAll(swgoTop.getFromColumnInfo());
-        resolvingContext = new SQLContext(SQLContext.ClauseType.WHERE);
         resolver.resolveAll(swgoTop.getWhereColumnInfo());
-        resolvingContext = new SQLContext(SQLContext.ClauseType.GROUPBY);
         resolver.resolveAll(swgoTop.getGroupByColumnInfo());
         lastResolvedQuery = swgoTop;
 
@@ -317,7 +335,9 @@ class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
     public void enterSelect_list_elem(Select_list_elemContext ctx) {
         if (ctx.select_list_elem_star()!=null) {
             String tableName = ctx.table_name()==null?null:ctx.table_name().getText().toLowerCase();
-            swgoStack.peek().addSelectColumnInfo(new ColumnNameInfo(tableName, "*"));
+            ColumnNameInfo colInfo = new ColumnNameInfo(tableName, "*");
+            colInfo.setPosition(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
+            swgoStack.peek().addSelectColumnInfo(colInfo);
         }
     }
 
@@ -354,13 +374,12 @@ class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
         for (String i : schemas.keySet())
             this.schemas.put(i.toLowerCase(), schemas.get(i));
     }
-    public void setStats(SQLColumnStats s) {
-        statsObserver = s;
-    }
 
     public boolean hasUnresolvedSymbol() { return !unresolvedSymbols.isEmpty(); }
 
     public Deque<List<QueryInfo>> getQueryGroups() { return postOrderQueryGroups; }
+
+    public Map<Pair<Integer, Integer>, List<ColumnDescriptor>> getRawResult() { return rawResult; }
 
     private Map<String, Set<String>> schemas = new HashMap<>();
 
@@ -375,8 +394,8 @@ class TSQLSelectStmtListener extends Antlr4TSQLAnalyzerBaseListener {
     private QueryInfo lastResolvedQuery;
     private List<ColumnNameInfo> unresolvedSymbols = new ArrayList<>();
 
-    private SQLContext resolvingContext;
     private int nestedLevel = 0;
-    private SQLColumnStats statsObserver;
+
+    private Map<Pair<Integer, Integer>, List<ColumnDescriptor>> rawResult = new HashMap<>();
     // TODO: tables with schema names?
 }

@@ -29,5 +29,4 @@ public class ColumnStatsTest {
         Assert.assertFalse(analyzer.hasUnresolvedColumn());
         System.out.println("basic0 parser test passed.");
     }
-
 }

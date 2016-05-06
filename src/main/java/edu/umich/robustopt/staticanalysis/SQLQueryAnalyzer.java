@@ -15,13 +15,40 @@ import java.util.*;
 public class SQLQueryAnalyzer {
 
     public void analyzeFile(File queryFile, Map<String, Set<String>> schemas) throws IOException {
-        BufferedReader queryReader = new BufferedReader(new FileReader(queryFile));
-        analyze(queryReader, schemas);
+        BufferedReader queryReader0 = new BufferedReader(new FileReader(queryFile));
+        analyze(queryReader0, schemas);
+        BufferedReader queryReader1 = new BufferedReader(new FileReader(queryFile));
+        doStats(queryReader1);
     }
 
     public void analyzeString(String queryString, Map<String, Set<String>> schemas) throws IOException {
-        BufferedReader queryReader = new BufferedReader(new StringReader(queryString));
-        analyze(queryReader, schemas);
+        BufferedReader queryReader0 = new BufferedReader(new StringReader(queryString));
+        analyze(queryReader0, schemas);
+        BufferedReader queryReader1 = new BufferedReader(new StringReader(queryString));
+        doStats(queryReader1);
+    }
+
+    private void doStats(Reader queryReader) throws IOException {
+        ANTLRInputStream queryStream = new ANTLRInputStream(queryReader);
+        Antlr4TSQLAnalyzerLexer lexer = new Antlr4TSQLAnalyzerLexer(queryStream);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        Antlr4TSQLAnalyzerParser parser = new Antlr4TSQLAnalyzerParser(tokens);
+
+        SQLWalker walker = new SQLWalker(analyzer.getRawResult());
+        walker.setStats(stats);
+        ParseTreeWalker.DEFAULT.walk(walker, parser.tsql_file());
+
+        if (verbose) {
+            stats.printGeneralStats();
+            stats.printFreqStats();
+            stats.printTableFreq();
+            stats.printColumnOccurenceStats();
+            stats.printTableOccurenceStats();
+            stats.printCorColumnsStats();
+            stats.printJoinedColumns();
+            stats.printAggregatedColumns();
+            System.out.println();
+        }
     }
 
     private void analyze(Reader queryReader, Map<String, Set<String>> schemas) throws IOException {
@@ -32,14 +59,8 @@ public class SQLQueryAnalyzer {
 
         analyzer = new TSQLSelectStmtListener();
         analyzer.setSchemas(schemas);
-        analyzer.setStats(stats);
-
         ParseTreeWalker.DEFAULT.walk(analyzer, parser.tsql_file());
-        if (verbose) {
-            stats.printFreqStats();
-            stats.printTupleStats();
-            stats.printTableFreq();
-        }
+
     }
 
 

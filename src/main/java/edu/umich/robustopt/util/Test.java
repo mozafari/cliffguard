@@ -27,9 +27,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
-import com.sun.jmx.snmp.tasks.ThreadService;
-
 import edu.umich.robustopt.common.BLog.LogLevel;
 import edu.umich.robustopt.dblogin.DatabaseLoginConfiguration;
 import edu.umich.robustopt.metering.LatencyMeter;

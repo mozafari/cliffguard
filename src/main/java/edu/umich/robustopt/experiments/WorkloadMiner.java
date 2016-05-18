@@ -128,10 +128,11 @@ public class WorkloadMiner {
 			analyzer.measureWindowSize_WindowId_ConsecutiveDistance(outputDirectory + File.separatorChar + "WindowSize_WindowId_ConsecutiveDistance.txt");
 				
 			DistributionDistance avgDist = analyzer.measureAvgDistanceBetweenConsecutiveWindows(analyzer.splitIntoTimeEqualWindows(numberOfDaysInEachWindow));
-				
-			//System.out.println("Avg Distance between consecutive windows, each window " + numberOfDaysInEachWindow + " days long");
-			//System.out.println(avgDist.showSummary());
-				
+
+			if (allOut) {
+				System.out.println("Avg Distance between consecutive windows, each window " + numberOfDaysInEachWindow + " days long");
+				System.out.println(avgDist.showSummary());
+			}
 			List<QueryWindow> windows = analyzer.splitIntoTimeEqualWindows(numberOfDaysInEachWindow);
 			numberOfWindowsToRead = (numberOfWindowsToRead==-1 ? windows.size() - numberOFInitialWindowsToSkip : numberOfWindowsToRead);
 			windows = windows.subList(numberOFInitialWindowsToSkip, numberOFInitialWindowsToSkip+numberOfWindowsToRead);
@@ -245,6 +246,7 @@ public class WorkloadMiner {
 	}
 
 	static private boolean schemaOut = false;
+	static private boolean allOut = false;
 	static public void main(String[] args) throws Exception {
 		OptionParser parser = new OptionParser( "g::p::c::j::a::" );
 		parser.accepts("general").withOptionalArg();
@@ -324,6 +326,7 @@ public class WorkloadMiner {
 			config.c_mode = "uswfgo";
 			config.j_mode = "ug";
 			config.a_mode = "ug";
+			allOut = true;
 		}
 
 		if (options.has("only-columns")) {

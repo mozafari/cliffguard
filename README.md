@@ -86,25 +86,20 @@ Optional parameter:
 
 ### WorkloadMiner
 
-**Note:** The WorkloadMiner is still is still unstable, to test whether it works correctly, you can firtly run
-```
-mvn test
-```
-
-WorkloadMiner Usage:
+**WorkloadMiner Usage**:
 
 ```bash
-java -cp CliffGuard.jar edu.umich.robustopt.experiments.WorkloadMiner schema_file query_file output_dir [window_size_in_days number_of_initial_windows_to_skip number_of_windows_to_read]
+java -cp CliffGuard.jar edu.umich.robustopt.experiments.WorkloadMiner schema_file query_file <options>
 ```
 Example:
 (assume the working directory is the top level `cliffguard/` directory.)
 ```bash
-java -cp ./target/CliffGuard.jar edu.umich.robustopt.experiments.WorkloadMiner src/test/resources/ParserTest/basic0_schema.txt src/test/resources/MinerTest/sample_query.txt target/miner_output/
+java -cp ./target/CliffGuard.jar edu.umich.robustopt.experiments.WorkloadMiner src/test/resources/ParserTest/basic0_schema.txt src/test/resources/MinerTest/sample_query.txt
 ```
 
-Parameter description:
+Argument description:
 	
-+ schema_file: a file describing the schema of the parsed query file in form of data definition language(DDL).
++ `schema_file`: a file describing the schema of the parsed query file in form of data definition language(DDL).
 
 	For example:
 	
@@ -125,23 +120,36 @@ RAIN_I REAL CHECK (RAIN_I BETWEEN 0 AND 100),
 PRIMARY KEY (ID, MONTH)
 );
 ```
-+ query_file: a CSV file (using | as separators) with timestamp followed by a single query in each line
++ `query_file`: a sql query file
 
 	For example: 
-```
-	2011-12-14 19:38:51|select avg(salary) from employee
-	2011-12-14 19:38:51|commit
+```SQL
+	select avg(salary) from employee;
+	select id from employee where id>2 order by id desc;
 ```
 
-+ output_dir: an empty directory to store the output of the analysis
++ `options`:
+
+|Option                                 |Argument                       |Description                                                                                                                                                                        |
+|---------------------------------------|-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|`-g` or `--general`                    |`None`                         |General statistics on appearing times of given tables and columns.                                                                                                                 |
+|`-g=<value>` or `--general=<value>`    |`<value>` = s\|f\|w\|g\|o      |General statistics on appearing times of given tables and columns in (`s`=`SELECT`, `f`=`FROM`, `w`=`WHERE`, `g`=`GROUP BY`, `o`=`ORDER BY`) clauses.                              |
+|`-p` or `--popularity`                 |`None`                         |Popular tables/columns in terms of number of queries in which which they appear.                                                                                                   |
+|`-p=<value>` or `--popularity=<value>` |`<value>` = s\|f\|w\|g\|o      |Popular tables/columns in terms of number of queries in which which they appear in (`s`=`SELECT`, `f`=`FROM`, `w`=`WHERE`, `g`=`GROUP BY`, `o`=`ORDER BY`) clauses.                |
+|`-c` or `--combination`                |`None`                         |Popular combinations of columns in terms of number of queries in which they appear together.                                                                                       |
+|`-c=<value>` or `--combination=<value>`|`<value>` = s\|f\|w\|g\|o      |Popular combinations of columns in terms of number of queries in which they appear together in (`s`=`SELECT`, `f`=`FROM`, `w`=`WHERE`, `g`=`GROUP BY`, `o`=`ORDER BY`) clauses.    |
+|`-j` or `--join`                       |`None`                         |Popular joined column groups.                                                                                                                                                      |
+|`-j=<value>` or `--join=<value>`       |`<value>` = g                  |Statistics about queries that involve at least one join, joining two tables and joining three or more tables.                                                                      |
+|`-a` or `--aggregate`                  |`None`                         |Columns that have appeared as a parameter to aggregate functions.                                                                                                                  |
+|`-a=<value>` or `--aggregate=<value>`  |`<value>` = g                  |Statistics about queries that have max/min, sum/count/avg aggregate functions in whole statement, or in SELECT clause only.                                                        |
+|`--all`                                |`None`                         |Output all the mining result.                                                                                                                                                      |
+|`--help`                               |`None`                         |Help for WorkloadMiner.                                                                                                                                                            |
+|`--only-column`                        |`None`                         |Only show results about COLUMN statistics.                                                                                                                                         |
+|`--only-table`                         |`None`                         |Only show results about TABLE statistics.                                                                                                                                          |
+|`--show-schema`                        |`None`                         |Show the schema that the query file is using.                                                                                                                                      |
+
 
 Optional parameters:
-
-+ *window_size_in_days*: number of days in each window, as a unit of anlysis (e.g., 7 for analyzing weekly patterns and 30 for analyzing monthly patterns). Default: 7
-
-+ *number_of_initial_windows_to_skip*: to account for early stages of the database lifetime when few query had run. Default:0 
-
-+ *number_of_windows_to_read*: to control the total number windows to analyze (choose -1 to read all windows of queries). Default: -1
 
 ### Scrubber
 

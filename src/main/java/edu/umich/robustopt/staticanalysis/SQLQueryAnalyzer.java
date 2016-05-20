@@ -21,6 +21,7 @@ public class SQLQueryAnalyzer {
         public String c_mode = "";
         public String j_mode = "";
         public String a_mode = "";
+        public String a_type = "";
         public boolean column_on = true;
         public boolean table_on = true;
         public Configuration() {}
@@ -59,30 +60,26 @@ public class SQLQueryAnalyzer {
 
         if (verbose) {
             stats.setQueryGroup(analyzer.getQueryGroups());
-            for (char mode : config.g_mode.toCharArray()) {
-                if (config.table_on) stats.printTableGeneralStats(mode);
-                if (config.column_on) stats.printColumnGeneralStats(mode);
+            if (!config.g_mode.equals("")) {
+                if (config.table_on) stats.printTableGeneralStats(config.g_mode);
+                if (config.column_on) stats.printColumnGeneralStats(config.g_mode);
             }
-            for (char mode : config.p_mode.toCharArray()) {
-                if (config.table_on) stats.printTableOccurrenceStats(mode);
-                if (config.column_on) stats.printColumnOccurrenceStats(mode);
+            if (!config.p_mode.equals("")) {
+                if (config.table_on) stats.printTableOccurrenceStats(config.p_mode);
+                if (config.column_on) stats.printColumnOccurrenceStats(config.p_mode);
+            }
+            if (!config.c_mode.equals(""))
+                if (config.column_on) stats.printCorColumnsStats(config.c_mode);
+
+            if (config.j_mode.equals("j")) {
+                stats.printJoinedColumns();
+                stats.printJoinInfo();
+            }
+            if (!config.a_mode.equals("") && !config.a_type.equals("")) {
+                stats.printAggregatedColumns(config.a_mode, config.a_type);
+                stats.printAggregateInfo();
             }
 
-            for (char mode : config.c_mode.toCharArray())
-                if (config.column_on) stats.printCorColumnsStats(mode);
-
-            for (char mode : config.j_mode.toCharArray()) {
-                if (mode=='u')
-                    stats.printJoinedColumns();
-                else if (mode=='g')
-                    stats.printJoinInfo();
-            }
-            for (char mode : config.a_mode.toCharArray()) {
-                if (mode=='u')
-                    stats.printAggregatedColumns();
-                else if (mode=='g')
-                    stats.printAggregateInfo();
-            }
             System.out.println();
         }
     }

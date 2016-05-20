@@ -1,6 +1,7 @@
 package edu.umich.robustopt.experiments;
 
 import java.io.File;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -26,6 +27,7 @@ import edu.umich.robustopt.workloads.EuclideanDistanceWithSimpleUnion.UnionOptio
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.commons.io.FileUtils;
+import java.text.DecimalFormat;
 
 public class WorkloadMiner {
 	
@@ -129,7 +131,7 @@ public class WorkloadMiner {
 				
 			DistributionDistance avgDist = analyzer.measureAvgDistanceBetweenConsecutiveWindows(analyzer.splitIntoTimeEqualWindows(numberOfDaysInEachWindow));
 
-			if (allOut) {
+			if (allOut||distanceOut) {
 				System.out.println("Avg Distance between consecutive windows, each window " + numberOfDaysInEachWindow + " days long");
 				System.out.println(avgDist.showSummary());
 			}
@@ -221,7 +223,9 @@ public class WorkloadMiner {
 		Timer t = new Timer();
 		File schemaFile = new File(schemaFileName);
 		deriveInsight(SchemaUtils.GetSchemaMap(schemaFile).getSchemas(), outputDirectory, inputTimestampedQueryLogFile, numberOfDaysInEachWindow, numberOFInitialWindowsToSkip, numberOfWindowsToRead);
-		System.out.println("Mining your workload took " + t.lapMinutes() + " minutes!");
+		DecimalFormat df = new DecimalFormat("#.###");
+		df.setRoundingMode(RoundingMode.CEILING);
+		System.out.println("Mining your workload took " + df.format(t.lapMinutes()) + " minutes!");
 		
 		log.status(LogLevel.STATUS, "DONE.");
 		
@@ -230,34 +234,75 @@ public class WorkloadMiner {
 	static public void print_help() {
 		System.out.println(
 				"Usage:\n" +
-				"  java -cp CliffGuard.jar edu.umich.robustopt.experiments.WorkloadMiner schema_file query_file [options]\n" +
+				"  java -cp CliffGuard.jar edu.umich.robustopt.experiments.WorkloadMiner schema_file query_file <options>\n" +
 				"\n" +
 				"Options:\n" +
-				"  -g --general      General statistics on appearing times of given tables and columns\n" +
-				"  -p --popularity   Popular tables/columns in terms of number of queries in which which they appear\n" +
-				"  -c --combination  Popular combinations of columns in terms of number of queries in which they appear together\n" +
-				"  -j --join         Popular joined column groups\n" +
-				"  -a --aggregate    Statistics about columns that have appeared as a parameter to aggregate functions\n" +
-				"  --all             Output all the mining results\n" +
-				"  --help            Help for WorkloadMiner\n" +
-				"  --only-column     Only show results about COLUMN statistics\n" +
-				"  --only-table      Only show results about TABLE statistics\n" +
-				"  --show-schema     Show the schema that the query file is using\n");
+				"  <None>                           Equivalent to \"-g -p -c -j -a\" when no argument is specified.\n" +
+				"  -g --general <value>[=swfgo]     General statistics on usage frequencies of different tables and columns.\n" +
+				"                                     <value> can be any combination of parameters: [s | w | f | g | o].\n" +
+				"                                     Each of s / w / f / g / o parameter means only columns/tables appearing in \n" +
+				"                                     SELECT/WHERE/FROM/GROUP BY/ORDER BY clause are considered respectively. If \n" +
+				"                                     multiple parameters (e.g. \"swg\") are specified, the union of statistics for each \n" +
+				"                                     corresponding parameter will be taken. If <value> is omitted, all parameters\n" +
+				"                                     (e.g. \"swfgo\") will be taken.\n" +
+				"  -p --popularity <value>[=swfgo]  Popular tables/columns in terms of number of queries in which which they appear.\n" +
+				"                                     <value> can be any combination of parameters: [s | w | f | g | o].\n" +
+				"                                     Each of s / w / f / g / o parameter means only columns/tables appearing in \n" +
+				"                                     SELECT/WHERE/FROM/GROUP BY/ORDER BY clause are considered respectively. If \n" +
+				"                                     multiple parameters (e.g. \"swg\") are specified, the union of statistics for each \n" +
+				"                                     corresponding parameter will be taken. If <value> is omitted, all parameters\n" +
+				"                                     (e.g. \"swfgo\") will be taken.\n" +
+				"  -c --combination <value>[=swfgo] Popular combinations of columns in terms of number of queries in which they co-appear.\n" +
+				"                                     <value> can be any combination of parameters: [s | w | f | g | o].\n" +
+				"                                     Each of s / w / f / g / o parameter means only columns groups appearing in \n" +
+				"                                     SELECT/WHERE/FROM/GROUP BY/ORDER BY clause are considered respectively. If \n" +
+				"                                     multiple parameters (e.g. \"swg\") are specified, the union of statistics for each \n" +
+				"                                     corresponding parameter will be taken. If <value> is omitted, all parameters\n" +
+				"                                     (e.g. \"swfgo\") will be taken.\n" +
+				"  -j --join                        Popular joined column groups. Number of queries that have at least join, number of\n" +
+				"                                     queries that involve joining exactly two tables, and number of queries that involve\n " +
+				"                                     joining three or more tables.\n" +
+				"  -a --aggregate <value>[=swg]     Popular columns in terms of the number of times they have appeared as a parameter to \n" +
+				"                                     aggregate functions. Number of queries that have min/max, sum/count/avg\n" +
+				"                                     aggregates at least once, and number of queries that have min/max, sum/count/avg\n" +
+				"                                     aggregates in SELECT/WHERE/GROUP BY clause.\n" +
+				"                                     <value> can be any combination of parameters: [s | w | g]. Each of s / w / g \n" +
+				"                                     parameter means only columns appearing as parameters in SELECT/WHERE/GROUP BY clause\n" +
+				"                                     are considered respectively. If multiple parameters (e.g. \"sw\") are specified,\n" +
+				"                                     the union of statistics for each corresponding parameter will be taken. If <value> \n" +
+				"                                     is omitted, all parameters (e.g. \"swg\") will be taken.\n" +
+				"  --aggregate-type <value>[=mt]    Used with --aggregate. <value> can be any combination of parameters: [m | t]. Parameter\n" +
+				"  (used with -a)                     [m] means only max/min aggregate functions are considered in statistics. Parameter [t]\n" +
+				"                                     means only sum/count/avg aggregate functions are considered in statistics. If multiple\n" +
+				"                                     multiple parameters (e.g. \"mt\") are specified, the union of statistics for each \n" +
+				"                                     corresponding parameter will be taken. <value> is a required parameter. Using -a without\n" +
+				"                                     --aggregate-type is equivalent to \"-a --aggregate-type mt\".\n" +
+				"  -d --distance                    Display distance among queries. A number between 0 and 1. A typically reasonable\n" +
+				"                                     value is 0.01.\n" +
+				"  --all                            Output all available statistics. Equivalent to: \"-g -p -c -j -a -d\".\n" +
+				"  --help                           Display this message.\n" +
+				"  --column-only                    Only output COLUMN related statistics. Should be used with -g or -p .\n" +
+				"  --table-only                     Only output TABLE related statistics. Should be used with -g or -p .\n" +
+				"  --show-schema                    Display the schema used in the query file.\n"
+				);
 	}
 
 	static private boolean schemaOut = false;
 	static private boolean allOut = false;
+	static private boolean distanceOut = false;
 	static public void main(String[] args) throws Exception {
-		OptionParser parser = new OptionParser( "g::p::c::j::a::" );
+		OptionParser parser = new OptionParser( "g::p::c::j::a::d" );
 		parser.accepts("general").withOptionalArg();
 		parser.accepts("popularity").withOptionalArg();
 		parser.accepts("combination").withOptionalArg();
 		parser.accepts("join").withOptionalArg();
 		parser.accepts("aggregate").withOptionalArg();
+		parser.accepts("distance");
+		parser.accepts("aggregate-type").withRequiredArg();
 		parser.accepts("all");
 		parser.accepts("help");
-		parser.accepts("only-columns");
-		parser.accepts("only-tables");
+		parser.accepts("column-only");
+		parser.accepts("table-only");
 
 		if (args.length<2) {
 			OptionSet options = parser.parse(args);
@@ -288,66 +333,76 @@ public class WorkloadMiner {
 		else if (options.has("aggregate")) aOpt = "aggregate";
 		if (options.has("c")) cOpt = "c";
 		else if (options.has("combination")) cOpt = "combination";
+
+		if (options.has("d") || options.has("distance")) distanceOut = true;
+
 		if (gOpt!=null) {
 			if (options.hasArgument(gOpt))
 				config.g_mode = options.valueOf(gOpt).toString();
 			else
-				config.g_mode = "u";
+				config.g_mode = "swfgo";
 		}
+
 		if (pOpt!=null) {
 			if (options.hasArgument(pOpt))
 				config.p_mode = options.valueOf(pOpt).toString();
 			else
-				config.p_mode = "u";
+				config.p_mode = "swfgo";
 		}
 		if (jOpt!=null) {
 			if (options.hasArgument(jOpt))
 				config.j_mode = options.valueOf(jOpt).toString();
 			else
-				config.j_mode = "u";
+				config.j_mode = "j";
 		}
 		if (aOpt!=null) {
 			if (options.hasArgument(aOpt))
 				config.a_mode = options.valueOf(aOpt).toString();
 			else
-				config.a_mode = "u";
+				config.a_mode = "swg";
+			config.a_type = "mt";
 		}
 		if (cOpt!=null) {
 			if (options.hasArgument(cOpt))
 				config.c_mode = options.valueOf(cOpt).toString();
 			else
-				config.c_mode = "u";
+				config.c_mode = "swfgo";
 		}
 
+		if (options.has("aggregate-type"))
+			config.a_type = options.valueOf("aggregate-type").toString();
 
-		if (options.has("all")) { // u = union
-			config.g_mode = "uswfgo";
-			config.p_mode = "uswfgo";
-			config.c_mode = "uswfgo";
-			config.j_mode = "ug";
-			config.a_mode = "ug";
+		if (options.has("all")) {
+			config.g_mode = "swfgo";
+			config.p_mode = "swfgo";
+			config.c_mode = "swfgo";
+			config.j_mode = "j";
+			config.a_mode = "swg";
+			config.a_type = "mt";
+			distanceOut = true;
 			allOut = true;
 		}
 
-		if (options.has("only-columns")) {
-			if (options.has("only-tables")) {
+		if (options.has("column-only")) {
+			if (options.has("table-only")) {
 				System.out.println("--only-columns option conflict with --only-tables");
 				print_help();
 			}
 			else config.table_on = false;
 		}
-		else if (options.has("only-tables"))
+		else if (options.has("table-only"))
 			config.column_on = false;
 
 		if (options.has("show-schema"))
 			schemaOut = true;
 
 		if (args.length==2) {
-			config.g_mode = "u";
-			config.p_mode = "u";
-			config.c_mode = "u";
-			config.j_mode = "u";
-			config.a_mode = "u";
+			config.g_mode = "swfgo";
+			config.p_mode = "swfgo";
+			config.c_mode = "swfgo";
+			config.j_mode = "j";
+			config.a_mode = "swg";
+			config.a_type = "mt";
 		}
 
 		if (options.has("help")) {

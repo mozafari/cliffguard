@@ -853,8 +853,7 @@ public class CliffGuard {
 			
 			
 			//NonConvexDesigner nonConvexDesigner = NonConvexDesigner.loadNonConvexDesignerFromFile(cliffGuard_config_file);
-	
-			
+
 			String cacheFilename = cacheDir + File.separator + "experiment.cache";
 			String newCacheFileName = null;
 			
@@ -867,8 +866,6 @@ public class CliffGuard {
 			t = new Timer();
 			experimentCache.saveTheEntireCache(cacheDir + File.separator + "experiment.cache");
 			System.out.println("Copying experiement cache took " + t.lapSeconds() + " secs");
-			
-					
 			
 			log.status(LogLevel.STATUS, "CliffGuard is now done.");
 		} catch (Exception e) {

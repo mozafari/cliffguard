@@ -1,7 +1,8 @@
 package edu.umich.robustopt.staticanalysis;
 
+import com.relationalcloud.tsqlparser.statement.select.Join;
 import edu.umich.robustopt.util.Pair;
-import edu.umich.robustopt.staticanalysis.SQLColumnContext.SQLColumnContextBuilder;
+import edu.umich.robustopt.staticanalysis.SQLContextStack.SQLColumnContextBuilder;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -27,6 +28,24 @@ public class SQLWalker extends Antlr4TSQLAnalyzerBaseListener {
     @Override
     public void enterQuery_from(Antlr4TSQLAnalyzerParser.Query_fromContext ctx) {
         SQLContextStack.push(new SQLContext(SQLContext.ClauseType.FROM));
+    }
+
+    @Override
+    public void enterJoin_part(Antlr4TSQLAnalyzerParser.Join_partContext ctx) {
+        SQLContext c = SQLContextStack.peek();
+        assert c.getType() == SQLContext.ClauseType.FROM;
+        if (ctx.LEFT()!=null)
+            c.setMinorType(SQLContext.MinorType.LEFT_OUTER);
+        else if (ctx.RIGHT()!=null)
+            c.setMinorType(SQLContext.MinorType.RIGHT_OUTER);
+        else if (ctx.OUTER()!=null)
+            c.setMinorType(SQLContext.MinorType.FULL_OUTER);
+        else
+            c.setMinorType(SQLContext.MinorType.INNER);
+    }
+    @Override
+    public void exitJoin_part(Antlr4TSQLAnalyzerParser.Join_partContext ctx) {
+        SQLContextStack.peek().setMinorType(SQLContext.MinorType.NIL);
     }
     @Override
     public void exitQuery_from(Antlr4TSQLAnalyzerParser.Query_fromContext ctx) { SQLContextStack.pop(); }

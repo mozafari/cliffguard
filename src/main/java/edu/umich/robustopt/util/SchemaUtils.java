@@ -21,6 +21,7 @@ import edu.umich.robustopt.common.BLog.LogLevel;
 import edu.umich.robustopt.dblogin.DBInvoker;
 import edu.umich.robustopt.dblogin.DatabaseLoginConfiguration;
 import edu.umich.robustopt.dblogin.SchemaDescriptor;
+import edu.umich.robustopt.staticanalysis.ColumnDescriptor;
 import edu.umich.robustopt.staticanalysis.SQLSchemaAnalyzer;
 
 
@@ -97,7 +98,7 @@ public class SchemaUtils {
 		return new SchemaDescriptor(conn, schemaMap);
 	}
 
-	public static SchemaDescriptor GetSchemaMap(File schemaFile) throws IOException {
+	public static Pair<SchemaDescriptor, List<ColumnDescriptor>> GetSchema(File schemaFile) throws IOException {
 		if (!schemaFile.isFile()) return null;
 		SQLSchemaAnalyzer analyzer = new SQLSchemaAnalyzer();
 		analyzer.analyzeFile(schemaFile);
@@ -114,7 +115,7 @@ public class SchemaUtils {
 		}
 		schemaMap.put(SchemaUtils.defaultSchemaName, schema);
 
-		return new SchemaDescriptor(null, schemaMap);
+		return new Pair<>(new SchemaDescriptor(null, schemaMap), analyzer.getUniqueList());
 	}
 
 	public static Map<String, Schema> GetTPCHSchema() {

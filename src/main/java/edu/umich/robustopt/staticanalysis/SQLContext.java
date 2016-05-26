@@ -1,9 +1,5 @@
 package edu.umich.robustopt.staticanalysis;
 
-import sun.util.resources.cldr.de.CalendarData_de_LU;
-
-import java.util.Objects;
-
 /**
  * Created by zhxchen on 4/14/16.
  */
@@ -12,7 +8,7 @@ public class SQLContext {
         NIL, SELECT, WHERE, FROM, GROUPBY, ORDERBY, EXPRESSION, STATEMENT
     }
     enum MinorType {
-        NIL, EXTREME, TOTAL, USER, OPERATOR
+        NIL, EXTREME, TOTAL, USER, OPERATOR, LEFT_OUTER, RIGHT_OUTER, INNER, FULL_OUTER
     }
     SQLContext(ClauseType t) {
         type = t;
@@ -43,7 +39,7 @@ public class SQLContext {
 
     ClauseType getType() { return type; }
     MinorType getMinorType() { return minorType; }
-
+    void setMinorType(MinorType mt) { minorType = mt; }
     private ClauseType type = ClauseType.NIL;
     private MinorType minorType = MinorType.NIL;
     private Integer id = null;

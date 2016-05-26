@@ -4,6 +4,7 @@ import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import edu.umich.robustopt.staticanalysis.ColumnDescriptor;
 import edu.umich.robustopt.staticanalysis.SQLQueryAnalyzer;
 import org.apache.commons.io.output.FileWriterWithEncoding;
 import org.apache.commons.math.stat.StatUtils;
@@ -60,19 +61,35 @@ public class SqlLogFileManager<Q extends Query>{
 	private int number_of_corrupted_queries_no_delimeter = 0;
 	private int number_of_corrupted_queries_timestamp_format = 0;
 	private int number_of_empty_queries = 0;
+	private List<ColumnDescriptor> uniqueList = null;
 
 	public SqlLogFileManager(char fieldSeparator, String querySeparator, QueryParser<Q> qParser, Map<String, Schema> schemaMap, LatencyMeter latencyMeter, Boolean useExplainInsteadOfRunningQueries, DBDesigner dbDesigner) {
 		this.fieldSeparator = fieldSeparator;
 		this.querySeparator = querySeparator;
 		this.qParser = qParser;
+		//TODO: unify
 		this.schemaMap = schemaMap;
+		this.uniqueList = null;
 		this.latencyMeter = latencyMeter;
 		this.useExplainInsteadOfRunningQueries = useExplainInsteadOfRunningQueries;
 		this.dbDesigner = dbDesigner;
 	}
-	
+	public SqlLogFileManager(char fieldSeparator, String querySeparator, QueryParser<Q> qParser, Map<String, Schema> schemaMap, List<ColumnDescriptor> ul, LatencyMeter latencyMeter, Boolean useExplainInsteadOfRunningQueries, DBDesigner dbDesigner) {
+		this.fieldSeparator = fieldSeparator;
+		this.querySeparator = querySeparator;
+		this.qParser = qParser;
+		//TODO: unify
+		this.schemaMap = schemaMap;
+		this.uniqueList = ul;
+		this.latencyMeter = latencyMeter;
+		this.useExplainInsteadOfRunningQueries = useExplainInsteadOfRunningQueries;
+		this.dbDesigner = dbDesigner;
+	}
 	public SqlLogFileManager(char fieldSeparator, String querySeparator, QueryParser<Q> qParser, Map<String, Schema> schemaMap) {
-		this(fieldSeparator, querySeparator, qParser, schemaMap, null, null, null);
+		this(fieldSeparator, querySeparator, qParser, schemaMap, null, null, null, null);
+	}
+	public SqlLogFileManager(char fieldSeparator, String querySeparator, QueryParser<Q> qParser, Map<String, Schema> schemaMap, List<ColumnDescriptor> ul) {
+		this(fieldSeparator, querySeparator, qParser, schemaMap, ul, null, null, null);
 	}
 
 	public static List<String> loadQueryStringsFromPlainFile(String filename, int maxQueriesPerWindow) throws IOException {
@@ -173,7 +190,7 @@ public class SqlLogFileManager<Q extends Query>{
 				//++number_of_corrupted_queries_no_delimeter;
 				//continue;
 				pos1 = -1;
-				timestampStr = formatter.format(new Date(System.currentTimeMillis() + number_of_all_queries*(86400 * 7 * 1000)));
+				timestampStr = formatter.format(new Date(System.currentTimeMillis() + number_of_all_queries*(86400 * 1 * 1000)));
 			}
 			else timestampStr = line.substring(0, pos1);
 
@@ -260,6 +277,8 @@ public class SqlLogFileManager<Q extends Query>{
 
 		SQLQueryAnalyzer statsAnalyzer = new SQLQueryAnalyzer();
 		statsAnalyzer.setVerbose(true);
+		// TODO: unify schemaMap and schema(list).
+		statsAnalyzer.setSchema(uniqueList);
 		statsAnalyzer.analyzeString(sqlString, SchemaUtils.toPlainMap(schemaMap.get(SchemaUtils.defaultSchemaName)));
 
 		Collections.sort(loaded_queries, new QueryTemporalComparator());
@@ -461,6 +480,7 @@ public class SqlLogFileManager<Q extends Query>{
 	}
 
 	public static void main(String[] args) {
+		/*
 		SimpleDateFormat dateFormat = new SimpleDateFormat(timeStampFormat);
 		Date mydate;
 		try {
@@ -535,7 +555,7 @@ public class SqlLogFileManager<Q extends Query>{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		*/
 	}
-
 
 }

@@ -1,11 +1,8 @@
 package test.robustopt;
 
-import edu.umich.robustopt.staticanalysis.SQLColumnContext;
 import org.apache.commons.io.FileUtils;
-import org.junit.Test;
 import edu.umich.robustopt.experiments.WorkloadMiner;
 import java.io.File;
-import java.io.IOException;
 
 /**
  * Created by sorrow17 on 2016/3/19.

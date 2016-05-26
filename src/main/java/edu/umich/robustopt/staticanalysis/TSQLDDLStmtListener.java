@@ -46,10 +46,17 @@ public class TSQLDDLStmtListener extends Antlr4TSQLAnalyzerBaseListener {
         ColumnInfo columnItem = new ColumnInfo(newColumnId);
         schemaList.getLast().addColumnInfo(columnItem);
         lastColumnName = ctx.column_name().getText();
+        lastColumnId = newColumnId;
     }
     @Override
     public void exitColumn_definition(Column_definitionContext ctx) {
         lastColumnName = null;
+    }
+
+    @Override
+    public void enterColumn_constraint(Column_constraintContext ctx) {
+        if (ctx.UNIQUE()!=null || ctx.PRIMARY()!=null)
+            uniqueList.add(lastColumnId);
     }
     @Override
     public void enterReference_constraint(Reference_constraintContext ctx) {
@@ -62,6 +69,9 @@ public class TSQLDDLStmtListener extends Antlr4TSQLAnalyzerBaseListener {
     public void enterTable_constraint(Table_constraintContext ctx) {
         // TODO: column_name_list
         if (ctx.column_name()!=null) lastColumnName = ctx.column_name().getText();
+        TableInfo tableInfo = schemaList.getLast();
+        if ((ctx.UNIQUE()!=null || ctx.PRIMARY()!=null) && ctx.column_name_list().column_name().size()==1)
+            uniqueList.add(new ColumnDescriptor(SchemaUtils.defaultSchemaName, tableInfo.getTableName(), ctx.column_name_list().column_name(0).getText()));
     }
     @Override
     public void exitTable_constraint(Table_constraintContext ctx) {
@@ -77,7 +87,10 @@ public class TSQLDDLStmtListener extends Antlr4TSQLAnalyzerBaseListener {
         return res;
     }
 
-    private String lastColumnName;
-    private Deque<TableInfo> schemaList = new ArrayDeque<>();
+    public List<ColumnDescriptor> getUniqueList() { return uniqueList; }
 
+    private String lastColumnName;
+    private ColumnDescriptor lastColumnId;
+    private Deque<TableInfo> schemaList = new ArrayDeque<>();
+    private List<ColumnDescriptor> uniqueList = new ArrayList<>();
 }

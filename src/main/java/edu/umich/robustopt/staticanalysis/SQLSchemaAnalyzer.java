@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import java.io.*;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,9 +23,12 @@ public class SQLSchemaAnalyzer {
         analyze(queryReader);
     }
 
+    // TODO: unify schema map and unique list.
     public Map<String, Set<String>> getPlainSchemaMap() {
         return analyzer.getPlainSchemaMap();
     }
+    public List<ColumnDescriptor> getUniqueList() { return analyzer.getUniqueList(); }
+
     private void analyze(Reader queryReader) throws IOException {
         ANTLRInputStream queryStream = new ANTLRInputStream(queryReader);
         Antlr4TSQLAnalyzerLexer lexer = new Antlr4TSQLAnalyzerLexer(queryStream);

@@ -13,51 +13,51 @@ import edu.umich.robustopt.util.SchemaUtils;
  */
 public class SQLColumnStats {
     class AprioriFilter {
-        public Map<ColumnSet, Integer> getFrequentSet() {
-            ColumnSet itemSet = new ColumnSet();
+        public Map<SQLColumnSet, Integer> getFrequentSet() {
+            SQLColumnSet itemSet = new SQLColumnSet();
             cols.forEach(itemSet::addAll);
 
-            Set<ColumnSet> origin = new HashSet<>();
-            origin.add(new ColumnSet());
+            Set<SQLColumnSet> origin = new HashSet<>();
+            origin.add(new SQLColumnSet());
             results.add(origin);
             Integer total = 0;
             // TODO: 100 might not be a reasonable upper limit
             while (!results.get(results.size()-1).isEmpty() && total<100) {
-                Set<ColumnSet> last = results.get(results.size()-1);
-                Set<ColumnSet> current = new HashSet<>();
-                for (ColumnSet cs : last)
+                Set<SQLColumnSet> last = results.get(results.size()-1);
+                Set<SQLColumnSet> current = new HashSet<>();
+                for (SQLColumnSet cs : last)
                     for (ColumnDescriptor column : itemSet.getColumns())
                         if (!cs.contains(column)) {
-                            ColumnSet tmp = new ColumnSet();
+                            SQLColumnSet tmp = new SQLColumnSet();
                             tmp.addAll(cs);
                             tmp.add(column);
                             if (check(tmp)) current.add(tmp);
                         }
-                //Map<ColumnSet, Integer> freq = new HashMap<>();
-                for (ColumnSet candidate : current)
-                    for (ColumnSet tx : cols)
+                //Map<SQLColumnSet, Integer> freq = new HashMap<>();
+                for (SQLColumnSet candidate : current)
+                    for (SQLColumnSet tx : cols)
                         if (tx.containsAll(candidate)) freq.put(candidate, freq.getOrDefault(candidate, 0)+1);
 
-                Set<ColumnSet> tail = new HashSet<>();
-                for (ColumnSet candidate : current)
+                Set<SQLColumnSet> tail = new HashSet<>();
+                for (SQLColumnSet candidate : current)
                     if (freq.getOrDefault(candidate, 0) >= threshold)
                         tail.add(candidate);
                 total += tail.size();
                 results.add(tail);
             }
 
-            Map<ColumnSet, Integer> ans = new HashMap<>();
-            for (Set<ColumnSet> res : results)
-                for (ColumnSet i : res)
+            Map<SQLColumnSet, Integer> ans = new HashMap<>();
+            for (Set<SQLColumnSet> res : results)
+                for (SQLColumnSet i : res)
                     if (i.size()>0) ans.put(i, freq.get(i));
             return ans;
         }
-        public AprioriFilter(List<ColumnSet> c) {
+        public AprioriFilter(List<SQLColumnSet> c) {
             cols = c;
         }
-        private boolean check(ColumnSet cs) {
-            Set<ColumnSet> last = results.get(results.size()-1);
-            ColumnSet tmp = new ColumnSet();
+        private boolean check(SQLColumnSet cs) {
+            Set<SQLColumnSet> last = results.get(results.size()-1);
+            SQLColumnSet tmp = new SQLColumnSet();
             tmp.addAll(cs);
             for (ColumnDescriptor i : cs.getColumns()) {
                 tmp.remove(i);
@@ -66,13 +66,13 @@ public class SQLColumnStats {
             }
             return true;
         }
-        final private List<ColumnSet> cols;
-        private List<Set<ColumnSet>> results = new ArrayList<>();
-        private Map<ColumnSet, Integer> freq = new HashMap<>();
+        final private List<SQLColumnSet> cols;
+        private List<Set<SQLColumnSet>> results = new ArrayList<>();
+        private Map<SQLColumnSet, Integer> freq = new HashMap<>();
         private final Integer threshold = 3;
     }
 
-    public void observe(SQLColumnContext ctx) {
+    public void observe(SQLContextStack ctx) {
         // Current column
         ColumnDescriptor col = ctx.getColumn();
 
@@ -90,20 +90,10 @@ public class SQLColumnStats {
         SQLContext rootCtx = ctx.getContextByLevel(0);
         sqlStmt.add(rootCtx);
 
-        // Stats on table occurrence
-        //Set<SQLContext> tableContextSet = tableOccurence.getOrDefault(tableCol, new HashSet<>());
-        //tableContextSet.add(rootCtx);
-        //tableOccurence.put(tableCol, tableContextSet);
-
-        // Stats on column occurrence
-        //Set<SQLContext> columnContextSet = columnOccurence.getOrDefault(col, new HashSet<>());
-        //columnContextSet.add(rootCtx);
-        //columnOccurence.put(col, columnContextSet);
-
-        ColumnSet s;
+        SQLColumnSet s; SQLJoinedGroup g;
         switch (queryCtx.getType()) {
             case SELECT:
-                s = selectCorrelatedColumns.getOrDefault(queryCtx, new ColumnSet());
+                s = selectCorrelatedColumns.getOrDefault(queryCtx, new SQLColumnSet());
                 s.add(col);
                 selectCorrelatedColumns.put(queryCtx, s);
                 break;
@@ -129,7 +119,32 @@ public class SQLColumnStats {
                         i++;
                     } while (env.getType() == SQLContext.ClauseType.EXPRESSION);
                     if (env.getType() == SQLContext.ClauseType.FROM || env.getType() == SQLContext.ClauseType.WHERE) {
-                        s = joinedColumns.getOrDefault(last, new ColumnSet());
+                        s = joinedColumns.getOrDefault(last, new SQLColumnSet());
+                        if (env.getType()== SQLContext.ClauseType.FROM) {
+                            switch (env.getMinorType()) {
+                                case LEFT_OUTER:
+                                    g = joinedDetailedColumns.getOrDefault(last, new SQLJoinedGroup(new SQLColumnSet(), SQLJoinedGroup.JoinType.LEFT_OUTER, null));
+                                    break;
+                                case RIGHT_OUTER:
+                                    g = joinedDetailedColumns.getOrDefault(last, new SQLJoinedGroup(new SQLColumnSet(), SQLJoinedGroup.JoinType.RIGHT_OUTER, null));
+                                    break;
+                                case FULL_OUTER:
+                                    g = joinedDetailedColumns.getOrDefault(last, new SQLJoinedGroup(new SQLColumnSet(), SQLJoinedGroup.JoinType.FULL_OUTER, null));
+                                    break;
+                                case INNER:
+                                    g = joinedDetailedColumns.getOrDefault(last, new SQLJoinedGroup(new SQLColumnSet(), SQLJoinedGroup.JoinType.INNER, null));
+                                    break;
+                                default:
+                                    assert false;
+                                    g = null;
+                                    break;
+                            }
+                        }
+                        else {
+                            g = joinedDetailedColumns.getOrDefault(last, new SQLJoinedGroup(new SQLColumnSet(), SQLJoinedGroup.JoinType.INNER, null));
+                        }
+                        g.addColumn(col);
+                        joinedDetailedColumns.put(last, g);
                         s.add(col);
                         joinedColumns.put(last, s);
                         if (s.size()>=2)
@@ -137,8 +152,8 @@ public class SQLColumnStats {
                     }
                     else if (env.getType() == SQLContext.ClauseType.SELECT) {
                         if (queryCtx.getMinorType()!= SQLContext.MinorType.OPERATOR && queryCtx.getMinorType()!= SQLContext.MinorType.NIL) {
-                            Map<SQLContext, ColumnSet> tmp = aggregatedColumns.getOrDefault(new Pair<>('s', type), new HashMap<>());
-                            s = tmp.getOrDefault(queryCtx, new ColumnSet());
+                            Map<SQLContext, SQLColumnSet> tmp = aggregatedColumns.getOrDefault(new Pair<>('s', type), new HashMap<>());
+                            s = tmp.getOrDefault(queryCtx, new SQLColumnSet());
                             s.add(col);
                             tmp.put(queryCtx, s);
                             aggregatedColumns.put(new Pair<>('s', type), tmp);
@@ -155,8 +170,8 @@ public class SQLColumnStats {
                     }
                     else if (env.getType() == SQLContext.ClauseType.GROUPBY) {
                         if (queryCtx.getMinorType()!= SQLContext.MinorType.OPERATOR && queryCtx.getMinorType()!= SQLContext.MinorType.NIL) {
-                            Map<SQLContext, ColumnSet> tmp = aggregatedColumns.getOrDefault(new Pair<>('g', type), new HashMap<>());
-                            s = tmp.getOrDefault(queryCtx, new ColumnSet());
+                            Map<SQLContext, SQLColumnSet> tmp = aggregatedColumns.getOrDefault(new Pair<>('g', type), new HashMap<>());
+                            s = tmp.getOrDefault(queryCtx, new SQLColumnSet());
                             s.add(col);
                             tmp.put(queryCtx, s);
                             aggregatedColumns.put(new Pair<>('g', type), tmp);
@@ -207,43 +222,6 @@ public class SQLColumnStats {
         private PrintWriter writer;
     }
 
-    private class ColumnSet {
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("<");
-            String joined = String.join(", ", cols.stream().map(ColumnDescriptor::getTableColumnName).collect(Collectors.toList()));
-            sb.append(joined);
-            sb.append(">");
-            return sb.toString();
-        }
-        public void add(ColumnDescriptor col) {
-            cols.add(col);
-        }
-        public void addAll(ColumnSet other) { cols.addAll(other.cols); }
-        public boolean containsAll(ColumnSet other) { return cols.containsAll(other.cols); }
-        public boolean contains(ColumnDescriptor c) { return cols.contains(c); }
-        public void remove(ColumnDescriptor c) { cols.remove(c); }
-
-        public Integer size() { return cols.size(); }
-        @Override
-        public int hashCode() {
-            return cols.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return (o instanceof ColumnSet) && ((ColumnSet) o).cols.equals(cols);
-        }
-
-        public List<ColumnDescriptor> getColumns() { return cols.stream().collect(Collectors.toList()); }
-
-        public ColumnSet() {}
-        public ColumnSet(Set<ColumnDescriptor> c) { cols = c; }
-
-        private Set<ColumnDescriptor> cols = new HashSet<>();
-    }
-
     private class StatsTable {
         public void addColumn(String str, String[] bodies) {
             headers.add(str);
@@ -281,7 +259,7 @@ public class SQLColumnStats {
         return new ColumnDescriptor(SchemaUtils.defaultSchemaName, col.getTableName(), null);
     }
 
-    private List<ColumnSet> combinationFilter(String command) {
+    private List<SQLColumnSet> combinationFilter(String command) {
         List<Set<ColumnDescriptor>> res = new ArrayList<>();
         if (command.indexOf('s')!=-1)
             for (List<TSQLSelectStmtListener.QueryInfo> i : queryGroup)
@@ -304,7 +282,7 @@ public class SQLColumnStats {
                 for (TSQLSelectStmtListener.QueryInfo j : i)
                     res.add(j.getOrderByColumnStrings().stream().map(this::colFromPair).collect(Collectors.toSet()));
 
-        return res.stream().map(ColumnSet::new).collect(Collectors.toList());
+        return res.stream().map(SQLColumnSet::new).collect(Collectors.toList());
     }
 
     private List<List<ColumnDescriptor>> commandFilter(String command) {
@@ -449,17 +427,17 @@ public class SQLColumnStats {
     public void printCorColumnsStats(String mode) {
         String ctx = explainMode(mode);
         printTitle("popular sets of columns in terms of number of queries in which they co-appear " + ctx + ":");
-        List<ColumnSet> m = combinationFilter(mode);
-        Map<ColumnSet, Integer> freq = new AprioriFilter(m).getFrequentSet();
+        List<SQLColumnSet> m = combinationFilter(mode);
+        Map<SQLColumnSet, Integer> freq = new AprioriFilter(m).getFrequentSet();
 
-        List<Map.Entry<ColumnSet, Integer>> l = sortFreq(freq);
+        List<Map.Entry<SQLColumnSet, Integer>> l = sortFreq(freq);
 
         printer.print("- Rank ");
         int len = printer.alignLength(l.stream().map(x->x.getKey().toString()).collect(Collectors.toList()));
         printer.printPadded("Columns", len);
         printer.println("Queries");
         Integer i = 0;
-        for (Map.Entry<ColumnSet, Integer> x : l) {
+        for (Map.Entry<SQLColumnSet, Integer> x : l) {
             i++;
             printer.print(String.format("%7s", i.toString() + ". "));
             printer.printPadded(x.getKey().toString(), len);
@@ -472,15 +450,15 @@ public class SQLColumnStats {
 
     public void printJoinedColumns() {
         printTitle("Popular COLUMN groups that get joined in queries (rank from the highest to the lowest): ");
-        List<ColumnSet> l =
+        List<SQLColumnSet> l =
                 joinedColumns.entrySet().stream()
                         .map(x -> x.getValue()).collect(Collectors.toList());
 
-        Map<ColumnSet, Integer> freq = new HashMap<>();
-        for (ColumnSet x : l)
+        Map<SQLColumnSet, Integer> freq = new HashMap<>();
+        for (SQLColumnSet x : l)
             freq.put(x, freq.getOrDefault(x, 0)+1);
 
-        List<Map.Entry<ColumnSet, Integer>> res =
+        List<Map.Entry<SQLColumnSet, Integer>> res =
                 freq.entrySet().stream()
                         .sorted((x,y)->y.getValue()-x.getValue()).collect(Collectors.toList());
 
@@ -490,8 +468,54 @@ public class SQLColumnStats {
         printer.println("Queries");
 
         Integer i = 0;
-        for (Map.Entry<ColumnSet, Integer> x : res) {
+        for (Map.Entry<SQLColumnSet, Integer> x : res) {
             if (x.getKey().size() <= 1) continue;
+            i++;
+            printer.print(String.format("%7s", i.toString() + ". "));
+            printer.printPadded(x.getKey().toString(), len);
+            printer.println(String.valueOf(x.getValue()));
+        }
+
+        printer.println();
+        printer.println("(Total result(s): " + i + ", " + "listed: " + i + ")");
+    }
+
+    public void printJoinedColumnsDetailed() {
+        printTitle("Popular joined COLUMNS groups aggregated by their joined types (popularity is defined by number of queries that contain the given joined column group and ranked from the highest to the lowest): ");
+        // TODO: self join
+
+        List<SQLJoinedGroup> l =
+                joinedDetailedColumns.entrySet().stream().filter(x -> x.getValue().getColumnSet().size()>1)
+                        .map(x -> x.getValue()).collect(Collectors.toList());
+        for (SQLJoinedGroup item : l) {
+            int u = 0, m = 0;
+            for (ColumnDescriptor col : item.getColumnSet().getColumns()) {
+                if (uniqueList.contains(col)) u++;
+                else m++;
+            }
+            if (u==0 && m>0)
+                item.setRelationship(SQLJoinedGroup.Relationship.MANY_TO_MANY);
+            else if (u>0 && m==0)
+                item.setRelationship(SQLJoinedGroup.Relationship.ONE_TO_ONE);
+            else if (u>0 && m>0)
+                item.setRelationship(SQLJoinedGroup.Relationship.FOREIGN_KEY);
+        }
+
+        Map<SQLJoinedGroup, Integer> freq = new HashMap<>();
+        for (SQLJoinedGroup x : l)
+            freq.put(x, freq.getOrDefault(x, 0)+1);
+
+        List<Map.Entry<SQLJoinedGroup, Integer>> res =
+                freq.entrySet().stream()
+                        .sorted((x,y)->y.getValue()-x.getValue()).collect(Collectors.toList());
+
+        printer.print("- Rank ");
+        int len = printer.alignLength(res.stream().map(x->x.getKey().toString()).collect(Collectors.toList()));
+        printer.printPadded("Columns", len);
+        printer.println("Queries");
+
+        Integer i = 0;
+        for (Map.Entry<SQLJoinedGroup, Integer> x : res) {
             i++;
             printer.print(String.format("%7s", i.toString() + ". "));
             printer.printPadded(x.getKey().toString(), len);
@@ -518,12 +542,12 @@ public class SQLColumnStats {
         else return String.join(" or ", res);
     }
 
-    private void updatePair(List<ColumnSet> l, Pair<Character, Character> p) {
+    private void updatePair(List<SQLColumnSet> l, Pair<Character, Character> p) {
         l.addAll(aggregatedColumns.getOrDefault(p, new HashMap<>()).entrySet().stream()
                 .map(Map.Entry::getValue).collect(Collectors.toList()));
     }
-    private List<ColumnSet> aggregateFilter(String mode, String type) {
-        List<ColumnSet> l = new ArrayList<>();
+    private List<SQLColumnSet> aggregateFilter(String mode, String type) {
+        List<SQLColumnSet> l = new ArrayList<>();
         for (char m : new char[]{'s', 'w', 'g'})
             for (char t : new char[]{'m', 't'})
                 if (mode.indexOf(m)!=-1 && type.indexOf(t)!=-1)
@@ -535,10 +559,10 @@ public class SQLColumnStats {
         String ctxType = explainAggregateType(type);
         String ctx = explainMode(mode);
         printTitle("Popular COLUMNS in terms of " + ctxType +" aggregate functions in which they appear as a parameter with" + ctx + " (rank from the highest to the lowest):");
-        List<ColumnSet> l = aggregateFilter(mode, type);
+        List<SQLColumnSet> l = aggregateFilter(mode, type);
 
         Map <ColumnDescriptor, Integer> freq = new HashMap<>();
-        for (ColumnSet col : l)
+        for (SQLColumnSet col : l)
             for (ColumnDescriptor x : col.getColumns())
                 freq.put(x, freq.getOrDefault(x, 0)+1);
 
@@ -578,11 +602,17 @@ public class SQLColumnStats {
         printer.println("Number of queries that involve count/avg/sum aggregate in their GROUP BY clause: " + agTotalGroup.size());
     }
 
+    public void setSchema(List<ColumnDescriptor> ul) {
+        uniqueList = ul;
+    }
+
+    private List<ColumnDescriptor> uniqueList = null;
     private Map<ColumnDescriptor, Integer> columnFreq = new HashMap<>();
-    private Map<SQLContext, ColumnSet> selectCorrelatedColumns = new HashMap<>();
+    private Map<SQLContext, SQLColumnSet> selectCorrelatedColumns = new HashMap<>();
     private Map<ColumnDescriptor, Integer> tableFreq = new HashMap<>();
-    private Map<SQLContext, ColumnSet> joinedColumns = new HashMap<>();
-    private Map<Pair<Character, Character>, Map<SQLContext, ColumnSet>> aggregatedColumns = new HashMap<>();
+    private Map<SQLContext, SQLColumnSet> joinedColumns = new HashMap<>();
+    private Map<SQLContext, SQLJoinedGroup> joinedDetailedColumns = new HashMap<>();
+    private Map<Pair<Character, Character>, Map<SQLContext, SQLColumnSet>> aggregatedColumns = new HashMap<>();
     private Set<SQLContext> sqlStmt = new HashSet<>();
 
     // TODO: refactor query group

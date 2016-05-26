@@ -16,8 +16,11 @@ import edu.umich.robustopt.clustering.UnpartitionedQueryLogAnalyzer;
 import edu.umich.robustopt.common.BLog;
 import edu.umich.robustopt.common.BLog.LogLevel;
 import edu.umich.robustopt.dblogin.DatabaseLoginConfiguration;
+import edu.umich.robustopt.dblogin.SchemaDescriptor;
 import edu.umich.robustopt.microsoft.MicrosoftDatabaseLoginConfiguration;
+import edu.umich.robustopt.staticanalysis.ColumnDescriptor;
 import edu.umich.robustopt.staticanalysis.SQLQueryAnalyzer;
+import edu.umich.robustopt.util.Pair;
 import edu.umich.robustopt.util.SchemaUtils;
 import edu.umich.robustopt.util.Timer;
 import edu.umich.robustopt.vertica.VerticaDatabaseLoginConfiguration;
@@ -86,8 +89,8 @@ public class WorkloadMiner {
 		return allDatabaseConfigurations;
 	}
 
-	public static void deriveInsight (Map<String, Schema> schemaMap, String outputDirectory, String inputTimestampedQueryLogFile,
-								int numberOfDaysInEachWindow, int numberOFInitialWindowsToSkip, int numberOfWindowsToRead) throws Exception {
+	public static void deriveInsight (Map<String, Schema> schemaMap, List<ColumnDescriptor> ul, String outputDirectory, String inputTimestampedQueryLogFile,
+									  int numberOfDaysInEachWindow, int numberOFInitialWindowsToSkip, int numberOfWindowsToRead) throws Exception {
 		if (numberOfDaysInEachWindow<1 || numberOFInitialWindowsToSkip <0 || (numberOfWindowsToRead<1 && numberOfWindowsToRead!=-1))
 			throw new Exception("Invalid arguments: " + "numberOfDaysInEachWindow=" + numberOfDaysInEachWindow + 
 					", numberOFInitialWindowsToSkip=" + numberOFInitialWindowsToSkip + ", numberOfWindowsToRead=" + numberOfWindowsToRead);	
@@ -102,7 +105,7 @@ public class WorkloadMiner {
 				System.out.println("Current Schema: ");
 				System.out.println(schemaMap.get(SchemaUtils.defaultSchemaName));
 			}
-			SqlLogFileManager<Query_SWGO> sqlLogFileManager = new SqlLogFileManager<Query_SWGO>('|', "\n", new Query_SWGO.QParser(), schemaMap);
+			SqlLogFileManager<Query_SWGO> sqlLogFileManager = new SqlLogFileManager<Query_SWGO>('|', "\n", new Query_SWGO.QParser(), schemaMap, ul);
 			List<Query_SWGO> windowsQueriesSWGO = sqlLogFileManager.loadTimestampQueriesFromFile(inputTimestampedQueryLogFile);
 			//System.out.println("=======================================================================");
 
@@ -163,7 +166,7 @@ public class WorkloadMiner {
 		String inputTimestampedQueryLogFile;
 		String homeDir = System.getProperty("user.home");
 		//String database_login_file = homeDir + File.separator + "databases.conf";
-		int numberOfDaysInEachWindow = 7;
+		int numberOfDaysInEachWindow = 1;
 		int numberOFInitialWindowsToSkip = 0;
 		int numberOfWindowsToRead = -1;
 
@@ -222,7 +225,8 @@ public class WorkloadMiner {
 		
 		Timer t = new Timer();
 		File schemaFile = new File(schemaFileName);
-		deriveInsight(SchemaUtils.GetSchemaMap(schemaFile).getSchemas(), outputDirectory, inputTimestampedQueryLogFile, numberOfDaysInEachWindow, numberOFInitialWindowsToSkip, numberOfWindowsToRead);
+		Pair<SchemaDescriptor, List<ColumnDescriptor>> p = SchemaUtils.GetSchema(schemaFile);
+		deriveInsight(p.getKey().getSchemas(), p.getValue(), outputDirectory, inputTimestampedQueryLogFile, numberOfDaysInEachWindow, numberOFInitialWindowsToSkip, numberOfWindowsToRead);
 		DecimalFormat df = new DecimalFormat("#.###");
 		df.setRoundingMode(RoundingMode.CEILING);
 		System.out.println("Mining your workload took " + df.format(t.lapMinutes()) + " minutes!");
@@ -238,40 +242,26 @@ public class WorkloadMiner {
 				"\n" +
 				"Options:\n" +
 				"  <None>                           Equivalent to \"-g -p -c -j -a\" when no argument is specified.\n" +
-				"  -g --general <value>[=swfgo]     General statistics on usage frequencies of different tables and columns.\n" +
+				"  -g --general <value>               General statistics on usage frequencies of different tables and columns.\n" +
 				"                                     <value> can be any combination of parameters: [s | w | f | g | o].\n" +
 				"                                     Each of s / w / f / g / o parameter means only columns/tables appearing in \n" +
 				"                                     SELECT/WHERE/FROM/GROUP BY/ORDER BY clause are considered respectively. If \n" +
 				"                                     multiple parameters (e.g. \"swg\") are specified, the union of statistics for each \n" +
 				"                                     corresponding parameter will be taken. If <value> is omitted, all parameters\n" +
 				"                                     (e.g. \"swfgo\") will be taken.\n" +
-				"  -p --popularity <value>[=swfgo]  Popular tables/columns in terms of number of queries in which which they appear.\n" +
-				"                                     <value> can be any combination of parameters: [s | w | f | g | o].\n" +
-				"                                     Each of s / w / f / g / o parameter means only columns/tables appearing in \n" +
-				"                                     SELECT/WHERE/FROM/GROUP BY/ORDER BY clause are considered respectively. If \n" +
-				"                                     multiple parameters (e.g. \"swg\") are specified, the union of statistics for each \n" +
-				"                                     corresponding parameter will be taken. If <value> is omitted, all parameters\n" +
-				"                                     (e.g. \"swfgo\") will be taken.\n" +
-				"  -c --combination <value>[=swfgo] Popular combinations of columns in terms of number of queries in which they co-appear.\n" +
-				"                                     <value> can be any combination of parameters: [s | w | f | g | o].\n" +
-				"                                     Each of s / w / f / g / o parameter means only columns groups appearing in \n" +
-				"                                     SELECT/WHERE/FROM/GROUP BY/ORDER BY clause are considered respectively. If \n" +
-				"                                     multiple parameters (e.g. \"swg\") are specified, the union of statistics for each \n" +
-				"                                     corresponding parameter will be taken. If <value> is omitted, all parameters\n" +
-				"                                     (e.g. \"swfgo\") will be taken.\n" +
+				"  -p --popularity <value>          Popular tables/columns in terms of number of queries in which which they appear.\n" +
+				"                                     <value> has the same usage as the one in --general section.\n" +
+				"  -c --combination <value>         Popular combinations of columns in terms of number of queries in which they co-appear.\n" +
+				"                                     <value> has the same usage as the one in --general section.\n" +
 				"  -j --join                        Popular joined column groups. Number of queries that have at least join, number of\n" +
 				"                                     queries that involve joining exactly two tables, and number of queries that involve\n " +
 				"                                     joining three or more tables.\n" +
-				"  -a --aggregate <value>[=swg]     Popular columns in terms of the number of times they have appeared as a parameter to \n" +
+				"  -a --aggregate <value>           Popular columns in terms of the number of times they have appeared as a parameter to \n" +
 				"                                     aggregate functions. Number of queries that have min/max, sum/count/avg\n" +
 				"                                     aggregates at least once, and number of queries that have min/max, sum/count/avg\n" +
 				"                                     aggregates in SELECT/WHERE/GROUP BY clause.\n" +
-				"                                     <value> can be any combination of parameters: [s | w | g]. Each of s / w / g \n" +
-				"                                     parameter means only columns appearing as parameters in SELECT/WHERE/GROUP BY clause\n" +
-				"                                     are considered respectively. If multiple parameters (e.g. \"sw\") are specified,\n" +
-				"                                     the union of statistics for each corresponding parameter will be taken. If <value> \n" +
-				"                                     is omitted, all parameters (e.g. \"swg\") will be taken.\n" +
-				"  --aggregate-type <value>[=mt]    Used with --aggregate. <value> can be any combination of parameters: [m | t]. Parameter\n" +
+				"                                     <value> has the same usage as the one in --general section.\n" +
+				"  --aggregate-type <value>         Used with --aggregate. <value> can be any combination of parameters: [m | t]. Parameter\n" +
 				"  (used with -a)                     [m] means only max/min aggregate functions are considered in statistics. Parameter [t]\n" +
 				"                                     means only sum/count/avg aggregate functions are considered in statistics. If multiple\n" +
 				"                                     multiple parameters (e.g. \"mt\") are specified, the union of statistics for each \n" +

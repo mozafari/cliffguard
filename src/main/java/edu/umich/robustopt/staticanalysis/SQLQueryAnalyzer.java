@@ -56,6 +56,7 @@ public class SQLQueryAnalyzer {
 
         SQLWalker walker = new SQLWalker(analyzer.getRawResult());
         walker.setStats(stats);
+        stats.setSchema(schema);
         ParseTreeWalker.DEFAULT.walk(walker, parser.tsql_file());
 
         if (verbose) {
@@ -73,6 +74,7 @@ public class SQLQueryAnalyzer {
 
             if (config.j_mode.equals("j")) {
                 stats.printJoinedColumns();
+                stats.printJoinedColumnsDetailed();
                 stats.printJoinInfo();
             }
             if (!config.a_mode.equals("") && !config.a_type.equals("")) {
@@ -84,14 +86,14 @@ public class SQLQueryAnalyzer {
         }
     }
 
-    private void analyze(Reader queryReader, Map<String, Set<String>> schemas) throws IOException {
+    private void analyze(Reader queryReader, Map<String, Set<String>> schemaMap) throws IOException {
         ANTLRInputStream queryStream = new ANTLRInputStream(queryReader);
         Antlr4TSQLAnalyzerLexer lexer = new Antlr4TSQLAnalyzerLexer(queryStream);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         Antlr4TSQLAnalyzerParser parser = new Antlr4TSQLAnalyzerParser(tokens);
 
         analyzer = new TSQLSelectStmtListener();
-        analyzer.setSchemas(schemas);
+        analyzer.setSchemas(schemaMap);
         ParseTreeWalker.DEFAULT.walk(analyzer, parser.tsql_file());
 
     }
@@ -140,10 +142,13 @@ public class SQLQueryAnalyzer {
 
     public SQLQueryAnalyzer() { stats = new SQLColumnStats(); }
     public SQLQueryAnalyzer(SQLColumnStats s) { stats = s; }
+    public void setSchema(List<ColumnDescriptor> ul) { schema = ul; }
 
     public boolean hasUnresolvedColumn() { return analyzer.hasUnresolvedSymbol(); }
     public void setVerbose(boolean v) { verbose = v; }
     private boolean verbose = false;
     private TSQLSelectStmtListener analyzer;
     private SQLColumnStats stats;
+
+    private List<ColumnDescriptor> schema;
 }

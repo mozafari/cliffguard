@@ -22,3 +22,17 @@ from Sailors S, Reserves R, Boats B
 where S.sid = R.sid and R.bid = B.bid and B.color = 'green')
 RedGreenSailors
 where S.sid = RedGreenSailors.sid;
+
+select S.sname from Sailors S join Reserves R0 on S.sid=R0.sid
+outer join Reserves R1 on S.sid > R1.bid;
+select B.bname from Boats B join Reserves R0 on b.bid=R0.bid
+left outer join Reserves R1 on R1.sid+B.bid<1;
+select S.sname from Sailors S join Reserves R on S.sid=R.sid or S.sid<R.sid;
+select B.bname from Boats B join Reserves R0 on b.bid=R0.bid
+left outer join Reserves R1 on R1.sid+B.bid+R1.rday<10;
+select S.sname from Sailors S join Reserves R on S.sid=R.sid
+right outer join Boats B on S.sid=b.bid;
+select S.sname from Sailors S join Reserves R on S.rating=R.rday
+right outer join Boats B on S.sid=b.bid;
+select S.sname from Sailors S left join Reserves R on S.rating=R.rday
+full outer join Boats B on S.sid=b.bid;

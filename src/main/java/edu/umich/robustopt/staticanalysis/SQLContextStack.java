@@ -1,6 +1,7 @@
 package edu.umich.robustopt.staticanalysis;
 
 import edu.umich.robustopt.util.Pair;
+import edu.umich.robustopt.util.SchemaUtils;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -9,14 +10,14 @@ import java.util.Iterator;
 /**
  * Created by zhxchen on 4/14/16.
  */
-public class SQLColumnContext {
+public class SQLContextStack {
 
     private Pair<String, String> trueName = new Pair<>(null, null);
     private Pair<Integer, Integer> pos = new Pair<>(null, null);
     private Deque<SQLContext> contextStack = new ArrayDeque<>();
 
     public ColumnDescriptor getColumn() {
-        return new ColumnDescriptor(null, trueName.getKey(), trueName.getValue());
+        return new ColumnDescriptor(SchemaUtils.defaultSchemaName, trueName.getKey(), trueName.getValue());
     }
     public SQLContext getCurrentContext() {
         return contextStack.peek();
@@ -61,26 +62,26 @@ public class SQLColumnContext {
 
     static class SQLColumnContextBuilder {
         void setColumnName(ColumnDescriptor c) {
-            if (ctx==null) ctx = new SQLColumnContext();
+            if (ctx==null) ctx = new SQLContextStack();
             ctx.setColumnName(c);
         }
 
         void setPosition(Pair<Integer, Integer> p) {
-            if (ctx==null) ctx = new SQLColumnContext();
+            if (ctx==null) ctx = new SQLContextStack();
             ctx.setPosition(p);
         }
 
         void setContextStack(ArrayDeque<SQLContext> ctxStack) {
-            if (ctx==null) ctx = new SQLColumnContext();
+            if (ctx==null) ctx = new SQLContextStack();
             ctx.setContextStack(ctxStack.clone());
         }
-        SQLColumnContext build() {
+        SQLContextStack build() {
             assert ctx != null;
-            SQLColumnContext res = ctx;
+            SQLContextStack res = ctx;
             ctx = null;
             return res;
         }
-        private SQLColumnContext ctx = null;
+        private SQLContextStack ctx = null;
     }
 }
 

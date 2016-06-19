@@ -14,8 +14,8 @@ public class SchemaDescriptor {
 	public SchemaDescriptor(Connection connection, Map<String, Schema> schemas) {
 		this.connection = connection;
 		this.schemas = schemas;
-		if (connection == null || schemas == null) 
-			System.err.println("Connection or schemas are null in SchemaDescriptor");
+		if (connection == null && schemas == null)
+			System.err.println("Connection and schemas are both null in SchemaDescriptor");
 	}
 
 	public Connection getConnection() {

@@ -9,7 +9,7 @@ CONSTRAINT sailors PRIMARY KEY(sid)
 CREATE TABLE reserves (
 sid integer not null,
 bid integer not null,
-day datetime not null,
+rday datetime not null,
 CONSTRAINT PK_reserves
 PRIMARY KEY(sid, bid, day),
 FOREIGN KEY (sid) REFERENCES sailors(sid),

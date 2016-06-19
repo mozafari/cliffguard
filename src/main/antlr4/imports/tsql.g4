@@ -483,9 +483,10 @@ expression
 
     | expression op=('*' | '/' | '%') expression               #binary_operator_expression
     | op=('+' | '-') expression                                #unary_operator_expression
-    | expression op=('+' | '-' | '&' | '^' | '|' | '||') expression   #binary_operator_expression
+    | expression (op=('+' | '-' | '&' | '^' | '|' | '||') | comparison_operator) expression   #binary_operator_expression
     | expression comparison_operator expression                #binary_operator_expression
     ;
+
 
 constant_expression
     : NULL
@@ -536,9 +537,13 @@ search_condition_not
     : NOT? predicate
     ;
 
+comparison_operator_expression
+    : expression comparison_operator expression
+    ;
+
 predicate
     : EXISTS '(' subquery ')'
-    | expression comparison_operator expression
+    | comparison_operator_expression
     | expression comparison_operator (ALL | SOME | ANY) '(' subquery ')'
     | expression NOT? BETWEEN expression AND expression
     | expression NOT? IN '(' (subquery | expression_list) ')'
@@ -735,6 +740,7 @@ function_call
     | DATENAME '(' datepart ',' expression ')'
     // https://msdn.microsoft.com/en-us/library/ms174420.aspx
     | DATEPART '(' datepart ',' expression ')'
+    | EXTRACT '(' (YEAR | MONTH | DAY) FROM expression ')'
     // https://msdn.microsoft.com/en-us/library/ms189838.aspx
     | IDENTITY '(' data_type (',' seed=DECIMAL)? (',' increment=DECIMAL)? ')'
     // https://msdn.microsoft.com/en-us/library/bb839514.aspx
@@ -743,6 +749,7 @@ function_call
     | NULLIF '(' expression ',' expression ')'
     // https://msdn.microsoft.com/en-us/library/ms177587.aspx
     | SESSION_USER
+    | SUBSTRING '(' expression FROM number FOR number ')'
     // https://msdn.microsoft.com/en-us/library/ms179930.aspx
     | SYSTEM_USER
     ;
@@ -761,7 +768,7 @@ table_alias
 
 // https://msdn.microsoft.com/en-us/library/ms187373.aspx
 with_table_hints
-    : WITH? '(' table_hint (',' table_hint)* ')'
+    : WITH '(' table_hint (',' table_hint)* ')'
     ;
 
 // Id runtime check. Id can be (FORCESCAN, HOLDLOCK, NOLOCK, NOWAIT, PAGLOCK, READCOMMITTED,
@@ -987,6 +994,8 @@ constant
     | number
     | sign? (REAL | FLOAT)  // float or decimal
     | sign? '$' (DECIMAL | FLOAT)       // money
+    | DATE STRING
+    | INTERVAL STRING (MONTH | YEAR | DAY) ('(' number ')')?
     ;
 
 number
@@ -1021,12 +1030,15 @@ simple_id
     | COOKIE
     | COUNT
     | COUNT_BIG
+    | DATE
+    | DAY
     | DELAY
     | DELETED
     | DENSE_RANK
     | DISABLE
     | DYNAMIC
     | ENCRYPTION
+    | EXTRACT
     | FAST
     | FAST_FORWARD
     | FIRST
@@ -1041,6 +1053,7 @@ simple_id
     | HASH
     | INSENSITIVE
     | INSERTED
+    | INTERVAL
     | ISOLATION
     | KEYSET
     | KEEPFIXED
@@ -1054,6 +1067,7 @@ simple_id
     | MAX
     | MIN
     | MODIFY
+    | MONTH
     | NAME
     | NEXT
     | NOCOUNT
@@ -1097,6 +1111,7 @@ simple_id
     | STATS_STREAM
     | STDEV
     | STDEVP
+    | SUBSTRING
     | SUM
     | THROW
     | TIES
@@ -1114,6 +1129,7 @@ simple_id
     | WORK
     | XML
     | XMLNAMESPACES
+    | YEAR
     ;
 
 // https://msdn.microsoft.com/en-us/library/ms188074.aspx
@@ -1336,16 +1352,19 @@ CONCAT:                          C O N C A T;
 COOKIE:                          C O O K I E;
 COUNT:                           C O U N T;
 COUNT_BIG:                       C O U N T '_' B I G;
+DATE:                            D A T E;
 DATEADD:                         D A T E A D D;
 DATEDIFF:                        D A T E D I F F;
 DATENAME:                        D A T E N A M E;
 DATEPART:                        D A T E P A R T;
+DAY:                             D A Y;
 DELAY:                           D E L A Y;
 DELETED:                         D E L E T E D;
 DENSE_RANK:                      D E N S E '_' R A N K;
 DISABLE:                         D I S A B L E;
 DYNAMIC:                         D Y N A M I C;
 ENCRYPTION:                      E N C R Y P T I O N;
+EXTRACT:                         E X T R A C T;
 FAST:                            F A S T;
 FAST_FORWARD:                    F A S T '_' F O R W A R D;
 FIRST:                           F I R S T;
@@ -1359,6 +1378,7 @@ GROUPING_ID:                     G R O U P I N G '_' I D;
 HASH:                            H A S H;
 INSENSITIVE:                     I N S E N S I T I V E;
 INSERTED:                        I N S E R T E D;
+INTERVAL:                        I N T E R V A L;
 ISOLATION:                       I S O L A T I O N;
 KEEPFIXED:                       K E E P F I X E D;
 KEYSET:                          K E Y S E T;
@@ -1373,6 +1393,7 @@ MAX:                             M A X;
 MIN:                             M I N;
 MIN_ACTIVE_ROWVERSION:           M I N '_' A C T I V E '_' R O W V E R S I O N;
 MODIFY:                          M O D I F Y;
+MONTH:                           M O N T H;
 NEXT:                            N E X T;
 NAME:                            N A M E;
 NO:                              N O;
@@ -1418,6 +1439,7 @@ STATIC:                          S T A T I C;
 STATS_STREAM:                    S T A T S '_' S T R E A M;
 STDEV:                           S T D E V;
 STDEVP:                          S T D E V P;
+SUBSTRING:                       S U B S T R I N G;
 SUM:                             S U M;
 THROW:                           T H R O W;
 TIES:                            T I E S;
@@ -1435,6 +1457,7 @@ VIEW_METADATA:                   V I E W '_' M E T A D A T A;
 WORK:                            W O R K;
 XML:                             X M L;
 XMLNAMESPACES:                   X M L N A M E S P A C E S;
+YEAR:                            Y E A R;
 
 DOLLAR_ACTION:                   '$' A C T I O N;
 

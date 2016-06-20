@@ -242,33 +242,32 @@ public class WorkloadMiner {
 				"\n" +
 				"Options:\n" +
 				"  <None>                           Equivalent to \"-g -p -c -j -a\" when no argument is specified.\n" +
-				"  -g --general <value>               General statistics on usage frequencies of different tables and columns.\n" +
-				"                                     <value> can be any combination of parameters: [s | w | f | g | o].\n" +
+				"  -g --general <clauses>           General statistics on usage frequencies of different tables and columns.\n" +
+				"                                     <clauses> can be any subset of parameters: [s | w | f | g | o].\n" +
 				"                                     Each of s / w / f / g / o parameter means only columns/tables appearing in \n" +
 				"                                     SELECT/WHERE/FROM/GROUP BY/ORDER BY clause are considered respectively. If \n" +
 				"                                     multiple parameters (e.g. \"swg\") are specified, the union of statistics for each \n" +
-				"                                     corresponding parameter will be taken. If <value> is omitted, all parameters\n" +
+				"                                     corresponding parameter will be taken. If <clauses> is omitted, all parameters\n" +
 				"                                     (e.g. \"swfgo\") will be taken.\n" +
-				"  -p --popularity <value>          Popular tables/columns in terms of number of queries in which which they appear.\n" +
-				"                                     <value> has the same usage as the one in --general section.\n" +
-				"  -c --combination <value>         Popular combinations of columns in terms of number of queries in which they co-appear.\n" +
-				"                                     <value> has the same usage as the one in --general section.\n" +
+				"  --multiple-occurrence            Used with --general. When specified, the multiple occurrence of the same tables/columns\n" +
+				"  (used with -g)                     within the same query is counted multiple times instead of counted single time.\n" +
+				"  -c --combination <clauses>       Popular combinations of columns in terms of number of queries in which they co-appear.\n" +
+				"                                     <clauses> has the same usage as the one in --general section.\n" +
 				"  -j --join                        Popular joined column groups. Number of queries that have at least join, number of\n" +
 				"                                     queries that involve joining exactly two tables, and number of queries that involve\n " +
 				"                                     joining three or more tables.\n" +
-				"  -a --aggregate <value>           Popular columns in terms of the number of times they have appeared as a parameter to \n" +
+				"  -a --aggregate <clauses>         Popular columns in terms of the number of times they have appeared as a parameter to \n" +
 				"                                     aggregate functions. Number of queries that have min/max, sum/count/avg\n" +
 				"                                     aggregates at least once, and number of queries that have min/max, sum/count/avg\n" +
 				"                                     aggregates in SELECT/WHERE/GROUP BY clause.\n" +
-				"                                     <value> has the same usage as the one in --general section.\n" +
-				"  --aggregate-type <value>         Used with --aggregate. <value> can be any combination of parameters: [m | t]. Parameter\n" +
+				"                                     <clauses> has the same usage as the one in --general section.\n" +
+				"  --aggregate-type <types>         Used with --aggregate. <types> can be any subset of parameters: [m | t]. Parameter\n" +
 				"  (used with -a)                     [m] means only max/min aggregate functions are considered in statistics. Parameter [t]\n" +
 				"                                     means only sum/count/avg aggregate functions are considered in statistics. If multiple\n" +
-				"                                     multiple parameters (e.g. \"mt\") are specified, the union of statistics for each \n" +
-				"                                     corresponding parameter will be taken. <value> is a required parameter. Using -a without\n" +
+				"                                     parameters (e.g. \"mt\") are specified, the union of statistics for each \n" +
+				"                                     corresponding parameter will be taken. <types> is a required parameter. Using -a without\n" +
 				"                                     --aggregate-type is equivalent to \"-a --aggregate-type mt\".\n" +
-				"  -d --distance                    Display distance among queries. A number between 0 and 1. A typically reasonable\n" +
-				"                                     value is 0.01.\n" +
+				"  -d --distance                    Display distance among queries. The distance is a number between 0 and 1.\n" +
 				"  --all                            Output all available statistics. Equivalent to: \"-g -p -c -j -a -d\".\n" +
 				"  --help                           Display this message.\n" +
 				"  --column-only                    Only output COLUMN related statistics. Should be used with -g or -p .\n" +
@@ -289,6 +288,7 @@ public class WorkloadMiner {
 		parser.accepts("aggregate").withOptionalArg();
 		parser.accepts("distance");
 		parser.accepts("aggregate-type").withRequiredArg();
+		parser.accepts("multiple-occurrence");
 		parser.accepts("all");
 		parser.accepts("help");
 		parser.accepts("column-only");
@@ -361,6 +361,8 @@ public class WorkloadMiner {
 
 		if (options.has("aggregate-type"))
 			config.a_type = options.valueOf("aggregate-type").toString();
+		if (options.has("multiple-occurrence"))
+			config.m_mode = true;
 
 		if (options.has("all")) {
 			config.g_mode = "swfgo";

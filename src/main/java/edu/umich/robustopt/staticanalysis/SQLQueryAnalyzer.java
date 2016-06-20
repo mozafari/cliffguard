@@ -22,6 +22,7 @@ public class SQLQueryAnalyzer {
         public String j_mode = "";
         public String a_mode = "";
         public String a_type = "";
+        public boolean m_mode = false;
         public boolean column_on = true;
         public boolean table_on = true;
         public Configuration() {}
@@ -62,12 +63,14 @@ public class SQLQueryAnalyzer {
         if (verbose) {
             stats.setQueryGroup(analyzer.getQueryGroups());
             if (!config.g_mode.equals("")) {
-                if (config.table_on) stats.printTableGeneralStats(config.g_mode);
-                if (config.column_on) stats.printColumnGeneralStats(config.g_mode);
-            }
-            if (!config.p_mode.equals("")) {
-                if (config.table_on) stats.printTableOccurrenceStats(config.p_mode);
-                if (config.column_on) stats.printColumnOccurrenceStats(config.p_mode);
+                if (config.m_mode) {
+                    if (config.table_on) stats.printTableGeneralStats(config.g_mode);
+                    if (config.column_on) stats.printColumnGeneralStats(config.g_mode);
+                }
+                else {
+                    if (config.table_on) stats.printTableOccurrenceStats(config.p_mode);
+                    if (config.column_on) stats.printColumnOccurrenceStats(config.p_mode);
+                }
             }
             if (!config.c_mode.equals(""))
                 if (config.column_on) stats.printCorColumnsStats(config.c_mode);

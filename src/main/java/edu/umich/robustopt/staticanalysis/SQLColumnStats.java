@@ -249,7 +249,7 @@ public class SQLColumnStats {
         if (command.indexOf('g')!=-1) res.add("GROUP BY");
         if (command.indexOf('o')!=-1) res.add("ORDER BY");
         if (res.size()==5) return "in any clause";
-        else return "in " + String.join(" or ", res) + " clause";
+        else return "in the " + String.join(" or ", res) + " clauses";
     }
 
     private ColumnDescriptor colFromPair(Pair<String, String> p) {
@@ -322,7 +322,7 @@ public class SQLColumnStats {
         printer.println("Number of unique TABLES appearing in the query file: " + tableFreq.size());
         String ctx = explainMode(mode);
 
-        printer.println("Number of times a given TABLE has appeared " + ctx + " including multiple occurrences within the same query (rank from the highest to the lowest):");
+        printer.println("Number of times a given TABLE has appeared " + ctx + " (multiple occurrences of the same table within the same clause are counted multiple times, ranked from the highest to the lowest):");
         List<List<ColumnDescriptor>> m = commandFilter(mode);
         Map<ColumnDescriptor, Integer> freq = new HashMap<>();
         m.forEach(x -> countFreq(freq, x.stream().map(this::tableFromCol).collect(Collectors.toList())));
@@ -331,7 +331,7 @@ public class SQLColumnStats {
         printer.print("- Rank ");
         int len = printer.alignLength(l.stream().map(x -> x.getKey().getTableName()).collect(Collectors.toList()));
         printer.printPadded("Table", len);
-        printer.println("Number");
+        printer.println("Number of times");
         Integer i = 1;
         for (Map.Entry<ColumnDescriptor, Integer> x : l) {
             printer.print(String.format("%7s", i.toString() + ". "));
@@ -350,7 +350,7 @@ public class SQLColumnStats {
         printTitle("General Statistics for COLUMNS appearing " + ctxTitle + ":");
         printer.println("Number of unique COLUMNS appearing in the query file: "+ columnFreq.size());
         String ctx = explainMode(mode);
-        printer.println("Number of times a given COLUMN has appeared " + ctx + " including multiple occurrences within the same query (rank from the highest to the lowest):");
+        printer.println("Number of times a given COLUMN has appeared " + ctx + " (multiple occurrences of the same column within the same clause are counted multiple times, ranked from the highest to the lowest)");
         List<List<ColumnDescriptor>> m = commandFilter(mode);
         Map<ColumnDescriptor, Integer> freq = new HashMap<>();
         m.forEach(x -> countFreq(freq, x));
@@ -359,7 +359,7 @@ public class SQLColumnStats {
         printer.print("- Rank ");
         int len = printer.alignLength(l.stream().map(x -> x.getKey().getTableColumnName()).collect(Collectors.toList()));
         printer.printPadded("Column", len);
-        printer.println("Number");
+        printer.println("Number of times");
         Integer i = 1;
         for (Map.Entry<ColumnDescriptor, Integer> x : l) {
             printer.print(String.format("%7s", i.toString() + ". "));
@@ -374,7 +374,7 @@ public class SQLColumnStats {
 
     public void printTableOccurrenceStats(String mode) {
         String ctx = explainMode(mode);
-        printTitle("Popular TABLES in terms of number of queries in which they appear " + ctx + " (rank from the highest number to the lowest): ");
+        printTitle("Popular TABLES in terms of number of queries in which they appear " + ctx + " (ranked from the highest number to the lowest): ");
         List<List<ColumnDescriptor>> m = commandFilter(mode);
         Map<ColumnDescriptor, Integer> freq = new HashMap<>();
         m.forEach(x -> countFreq(freq, x.stream().map(this::tableFromCol).collect(Collectors.toSet())));
@@ -400,7 +400,7 @@ public class SQLColumnStats {
 
     public void printColumnOccurrenceStats(String mode) {
         String ctx = explainMode(mode);
-        printTitle("Popular COLUMNS in terms of number of queries in which they appear " + ctx + " (rank from the highest number to the lowest): ");
+        printTitle("Popular COLUMNS in terms of number of queries in which they appear " + ctx + " (ranked from the highest number to the lowest): ");
         List<List<ColumnDescriptor>> m = commandFilter(mode);
         Map<ColumnDescriptor, Integer> freq = new HashMap<>();
         m.forEach(x -> countFreq(freq, x.stream().collect(Collectors.toSet())));
@@ -426,7 +426,7 @@ public class SQLColumnStats {
 
     public void printCorColumnsStats(String mode) {
         String ctx = explainMode(mode);
-        printTitle("popular sets of columns in terms of number of queries in which they co-appear " + ctx + ":");
+        printTitle("Popular sets of columns in terms of number of queries in which they co-appear " + ctx + ":");
         List<SQLColumnSet> m = combinationFilter(mode);
         Map<SQLColumnSet, Integer> freq = new AprioriFilter(m).getFrequentSet();
 
@@ -449,7 +449,7 @@ public class SQLColumnStats {
     }
 
     public void printJoinedColumns() {
-        printTitle("Popular COLUMN groups that get joined in queries (rank from the highest to the lowest): ");
+        printTitle("Popular COLUMN groups that get joined in queries (ranked from the highest to the lowest): ");
         List<SQLColumnSet> l =
                 joinedColumns.entrySet().stream()
                         .map(x -> x.getValue()).collect(Collectors.toList());
@@ -573,7 +573,7 @@ public class SQLColumnStats {
         printer.print("- Rank ");
         int len = printer.alignLength(res.stream().map(x->x.getKey().getTableColumnName()).collect(Collectors.toList()));
         printer.printPadded("Column", len);
-        printer.println("Number");
+        printer.println("Number of times");
 
         Integer i = 0;
         for (Map.Entry<ColumnDescriptor, Integer> x : res) {

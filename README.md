@@ -42,7 +42,7 @@ CliffGuard comes with a number of tools. The current documentation describes the
 Usage:
 
 ```bash
-$ java -cp CliffGuard.jar edu.umich.robustopt.experiments.CliffGuard db_vendor db_login_file deployer_db_alias designer_db_alias cliffGuard_config_file cliffGuard_setting_id query_file cache_directory local_path_to_stats_file distance_value(>=0 & <=1) output_suggested_design_filename shouldDeploy(t/f) [output_deployment_script_filename]
+$ java -jar CliffGuard.jar db_login_file deployer_db_alias designer_db_alias cliffGuard_config_file cliffGuard_setting_id query_file cache_directory local_path_to_stats_file distance_value(>=0 & <=1) output_suggested_design_filename shouldDeploy(t/f) [output_deployment_script_filename]
 ```
 Parameter description:
 

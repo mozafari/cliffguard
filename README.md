@@ -16,7 +16,7 @@ Table of Contents:
 
 CliffGuard is an open-source software suite for analyzing database workloads, deriving performance insights, and most importantly delivering robust physical designs that remain effective in spite of workload changes.
 
-CliffGuard is developed by Barzan Mozafari et al. at the University of Michigan, Ann Arbor. For any inquiry, please contact Zhengxu Chen (zhxchen@umich.edu), who is actively contributing to the framework.
+CliffGuard is developed by Barzan Mozafari et al. at the University of Michigan, Ann Arbor.
 
 For more documentations and information visit [http://cliffguard.org](http://cliffguard.org)
 

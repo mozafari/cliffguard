@@ -41,12 +41,11 @@ public class MicrosoftDeployer extends DBDeployer {
 	public static void main(String[] args) {
 		System.out.println("MicrosoftDeployer Main");
 		
-		// TODO: A nonsense testcase only works under original developer's environment.
-		//       The main method is some how unused now but the method argument mismatch will break
-		//       the build process, therefore a fix would be pass two more null values temporarily.
+		// Historical manual smoke test. Configure a real instance in databases.conf;
+		// these placeholders must not be used as deployment credentials.
 		MicrosoftDatabaseLoginConfiguration login = 
-		    new MicrosoftDatabaseLoginConfiguration(false, "alias", "10.119.124.75",
-							    1433, "AdventureWorks", "sa", "asdf1234!", "DY-WINVM", null, null);
+		    new MicrosoftDatabaseLoginConfiguration(false, "alias", "sqlserver.example.invalid",
+							    1433, "AdventureWorks", "CHANGE_ME", "CHANGE_ME", "CHANGE_ME", null, null);
 
         try {
         	Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");

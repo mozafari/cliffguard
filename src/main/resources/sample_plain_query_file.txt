@@ -1,0 +1,2 @@
+select avg(L_PARTKEY) from LINEITEM
+select L_QUANTITY from LINEITEM where L_DISCOUNT < 0.5

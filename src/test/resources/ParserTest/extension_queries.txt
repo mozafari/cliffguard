@@ -1,0 +1,19 @@
+Select count(distinct *) from sailors s left join
+reserves r on s.sid = r.sid where r.bid is null;
+Select count(*) from sailors s outer join reserves as r on s.sid = r.sid where r.bid is null or s.sname is null;
+Select b.bid, b.bname, avg(t.rating) as avg_rating from boats b join
+(select b.bid, s.rating from reserves r, boats b, sailors s where b.bid=r.bid) t group by b.bid, b.bname having avg(t.rating) > 4;
+Select sum(case when sname is null then 1 else 0 end) from sailors group by rating;
+Select distinct sailors.sname from sailors where age not in (18, 21) limit 100;
+Select distinct sname, r.rday from reserves r join sailors s
+on
+s.sid=r.sid where 3 >= (select count(*) from reserves r2 where r.rday <= r2.rday) order by r.rday desc;
+Select * from sailors s where not exists (select * from reserves r where s.sid = r.sid);
+Select row_number() over(partition by b.bid order by r.rday desc)
+as row_number, s.sname, b.bname, r.rday from sailors as s inner join reserves
+as r on s.sid=r.sid inner join boats as b on r.bid=b.bid where s.sname||b.bname='42' order by b.bid;
+Select r.bid, count(s.age) over(partition by r.bid), avg(s.age) over(partition by r.bid)
+from sailors s join reserves r on s.sid=r.sid where r.bid in (1212, 1223);
+Select r.bid*2, count(s.age-s.rating) over(partition by r.bid), avg(s.age) over(partition by r.bid)
+from sailors s join reserves r on s.sid=r.sid where r.bid in (1212, 1223);
+
